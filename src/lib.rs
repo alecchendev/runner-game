@@ -1,75 +1,35 @@
-mod utils;
-
+extern crate wasm_bindgen;
 use wasm_bindgen::prelude::*;
+use web_sys::*;
+use web_sys::WebGlRenderingContext as GL;
 
-// When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
-// allocator.
-#[cfg(feature = "wee_alloc")]
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+mod gl_setup;
 
 #[wasm_bindgen]
-extern {
-    fn alert(s: &str);
+extern "C" {
+	#[wasm_bindgen(js_namespace = console)]
+	fn log(s: &str);
 }
 
 #[wasm_bindgen]
-pub fn greet() {
-    alert("Hello, runner-game!");
-}
-
-
-#[wasm_bindgen]
-#[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Pixel {
-    Black = 0,
-    White = 1,
+pub struct Client {
+	gl: WebGlRenderingContext,
 }
 
 #[wasm_bindgen]
-pub struct Screen {
-    width: u32,
-    height: u32,
-    pixels: Vec<Pixel>,
-}
+impl Client {
+	pub fn new() -> Client {
+		let gl = gl_setup::initialize_webgl_context().unwrap();
+		Client {
+			gl: gl,
+		}
+	}
 
-#[wasm_bindgen]
-impl Screen {
-    pub fn new() -> Screen {
-        let width = 720;
-        let height = 480;
-        let pixels = (0..width * height)
-            .map(|_i| Pixel::Black)
-            .collect();
+	pub fn update(&mut self, _time: f32, _height: f32, _width: f32) -> Result<(), JsValue> {
+		Ok(())
+	}
 
-        Screen {
-            width,
-            height,
-            pixels,
-        }
-    }
-
-    pub fn tick(&mut self) {
-        let mut next = self.pixels.clone();
-        
-        for (idx, pixel) in self.pixels.iter().enumerate() {
-            let next_pixel = if pixel == &Pixel::Black { Pixel::White } else { Pixel::Black };
-            next[idx] = next_pixel;
-        }
-
-        self.pixels = next;
-    }
-
-    pub fn width(&self) -> u32 {
-        self.width
-    }
-
-    pub fn height(&self) -> u32 {
-        self.height
-    }
-
-    pub fn pixels(&self) -> *const Pixel {
-        self.pixels.as_ptr()
-    }
+	pub fn render(&self) {
+		self.gl.clear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT);
+	}
 }
