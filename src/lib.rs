@@ -1,85 +1,128 @@
-extern crate wasm_bindgen;
+mod utils;
+
 use wasm_bindgen::prelude::*;
-use web_sys::*;
-use web_sys::WebGlRenderingContext as GL;
 
-#[macro_use]
-extern crate lazy_static;
+use std::fmt;
+extern crate js_sys;
 
-mod app_state;
-mod common_funcs;
-mod gl_setup;
-mod programs;
-mod shaders;
+// When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
+// allocator.
+#[cfg(feature = "wee_alloc")]
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-extern "C" {
-	#[wasm_bindgen(js_namespace = console)]
-	fn log(s: &str);
+extern {
+    fn alert(s: &str);
 }
 
 #[wasm_bindgen]
-pub struct Client {
-	gl: WebGlRenderingContext,
-	program_color_2d: programs::Color2D,
-	_program_color_2d_gradient: programs::Color2DGradient,
-	program_graph_3d: programs::Graph3D,
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Cell {
+    Dead = 0,
+    Alive = 1,
 }
 
 #[wasm_bindgen]
-impl Client {
-	pub fn new() -> Client {
-		let gl = gl_setup::initialize_webgl_context().unwrap();
-		Client {
-			program_color_2d: programs::Color2D::new(&gl),
-			_program_color_2d_gradient: programs::Color2DGradient::new(&gl),
-			program_graph_3d: programs::Graph3D::new(&gl),
-			gl: gl,
-		}
-	}
+pub struct Universe {
+    width: u32,
+    height: u32,
+    cells: Vec<Cell>,
+}
 
-	pub fn update(&mut self, time: f32, height: f32, width: f32) -> Result<(), JsValue> {
-		app_state::update_dynamic_data(time, height, width);
-		Ok(())
-	}
+#[wasm_bindgen]
+impl Universe {
+    pub fn new() -> Universe {
+        let width = 64;
+        let height = 64;
 
-	pub fn render(&self) {
-		self.gl.clear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT);
+        let cells = (0..width * height)
+            .map(|i| {
+                /*if i % 2 == 0 || i % 7 == 0 {
+                    Cell::Alive
+                } else {
+                    Cell::Dead
+                }*/
+                let rand_num = js_sys::Math::random();
+                if rand_num < 0.5 { Cell::Dead } else { Cell::Alive }
+            })
+            .collect();
+        
+        Universe {
+            width,
+            height,
+            cells,
+        }
+    }
 
-		let curr_state = app_state::get_current_state();
+    pub fn render(&self) -> String {
+        self.to_string()
+    }
 
-		self.program_color_2d.render(
-			&self.gl,
-			curr_state.control_bottom, // bottom
-			curr_state.control_top, // top
-			curr_state.control_left, // left
-			curr_state.control_right, // right
-			curr_state.canvas_height, // canvas_height
-			curr_state.canvas_width, //  canvas_width
-		);
+    pub fn tick(&mut self) {
+        let mut next = self.cells.clone();
+        for row in 0..self.height {
+            for col in 0..self.width {
+                let idx = self.get_index(row, col);
+                let cell = self.cells[idx];
+                let live_neighbors = self.live_neighbor_count(row, col);
+                let next_cell = match (cell, live_neighbors) {
+                    (Cell::Alive, x) if x < 2 => Cell::Dead,
+                    (Cell::Alive, 2) | (Cell::Alive, 3) => Cell::Alive,
+                    (Cell::Alive, x) if x > 3 => Cell::Dead,
+                    (Cell::Dead, 3) => Cell::Alive,
+                    (otherwise, x) => otherwise,
+                };
+                next[idx] = next_cell;
+            }
+        }
+        self.cells = next;
+    }
 
-		/*
-		self.program_color_2d_gradient.render(
-			&self.gl,
-			curr_state.control_bottom + 20., // bottom
-			curr_state.control_top - 20., // top
-			curr_state.control_left + 20., // left
-			curr_state.control_right - 20., // right
-			curr_state.canvas_height, // canvas_height
-			curr_state.canvas_width, //  canvas_width
-		);
-		*/
+    pub fn get_index(&self, row: u32, column: u32) -> usize {
+        (row * self.width + column) as usize
+    }
 
-		self.program_graph_3d.render(
-			&self.gl,
-			curr_state.control_bottom, // bottom
-			curr_state.control_top, // top
-			curr_state.control_left, // left
-			curr_state.control_right, // right
-			curr_state.canvas_height, // canvas_height
-			curr_state.canvas_width, //  canvas_width
-			0.,
-			0.,
-		);
-	}
+    fn live_neighbor_count(&self, row: u32, column: u32) -> u8 {
+        let mut count = 0;
+        for delta_row in [self.height - 1, 0, 1].iter().cloned() {
+            for delta_col in [self.height - 1, 0, 1].iter().cloned() {
+                if delta_row == 0 && delta_col == 0 {
+                    continue;
+                }
+                let neighbor_row = (row + delta_row) % self.height;
+                let neighbor_col = (column + delta_col) % self.width;
+                let idx = self.get_index(neighbor_row, neighbor_col) as usize;
+                count += self.cells[idx] as u8;
+            }
+        }
+        count
+    }
+
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    pub fn cells(&self) -> *const Cell {
+        self.cells.as_ptr()
+    }
+
+}
+
+impl fmt::Display for Universe {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for line in self.cells.as_slice().chunks(self.width as usize) {
+            for &cell in line {
+                let symbol = if cell == Cell::Dead { '◻' } else { '◼' };
+                write!(f, "{}", symbol)?;
+            }
+            write!(f, "\n")?;
+        }
+        Ok(())
+    }
 }
