@@ -1,0 +1,4 @@
+pkg
+target
+www/node_modules
+www/.bin
