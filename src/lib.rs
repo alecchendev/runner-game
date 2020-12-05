@@ -22,7 +22,8 @@ extern "C" {
 pub struct Client {
 	gl: WebGlRenderingContext,
 	program_color_2d: programs::Color2D,
-	program_color_2d_gradient: programs::Color2DGradient,
+	_program_color_2d_gradient: programs::Color2DGradient,
+	program_graph_3d: programs::Graph3D,
 }
 
 #[wasm_bindgen]
@@ -31,7 +32,8 @@ impl Client {
 		let gl = gl_setup::initialize_webgl_context().unwrap();
 		Client {
 			program_color_2d: programs::Color2D::new(&gl),
-			program_color_2d_gradient: programs::Color2DGradient::new(&gl),
+			_program_color_2d_gradient: programs::Color2DGradient::new(&gl),
+			program_graph_3d: programs::Graph3D::new(&gl),
 			gl: gl,
 		}
 	}
@@ -56,6 +58,7 @@ impl Client {
 			curr_state.canvas_width, //  canvas_width
 		);
 
+		/*
 		self.program_color_2d_gradient.render(
 			&self.gl,
 			curr_state.control_bottom + 20., // bottom
@@ -64,6 +67,19 @@ impl Client {
 			curr_state.control_right - 20., // right
 			curr_state.canvas_height, // canvas_height
 			curr_state.canvas_width, //  canvas_width
+		);
+		*/
+
+		self.program_graph_3d.render(
+			&self.gl,
+			curr_state.control_bottom, // bottom
+			curr_state.control_top, // top
+			curr_state.control_left, // left
+			curr_state.control_right, // right
+			curr_state.canvas_height, // canvas_height
+			curr_state.canvas_width, //  canvas_width
+			0.,
+			0.,
 		);
 	}
 }

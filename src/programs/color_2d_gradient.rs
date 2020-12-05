@@ -4,6 +4,7 @@ use web_sys::*;
 use js_sys::WebAssembly;
 use super::super::common_funcs as cf;
 
+#[allow(dead_code)]
 pub struct Color2DGradient {
     program: WebGlProgram,
     color_buffer: WebGlBuffer,
@@ -13,12 +14,13 @@ pub struct Color2DGradient {
     u_transform: WebGlUniformLocation,
 }
 
+#[allow(dead_code)]
 impl Color2DGradient {
     pub fn new(gl: &WebGlRenderingContext) -> Color2DGradient {
         let program = cf::link_program(
             &gl,
             super::super::shaders::vertex::color_2d_gradient::SHADER,
-            super::super::shaders::fragment::color_2d_gradient::SHADER
+            super::super::shaders::fragment::varying_color_from_vertex::SHADER
         ).unwrap();
 
         let vertices_rect: [f32; 8] = [
@@ -91,8 +93,22 @@ impl Color2DGradient {
         gl.enable_vertex_attrib_array(1);
 
         let colors: [f32; 16] = [
-            
+            1., 0., 0., 1.,
+            0., 1., 0., 1.,
+            0., 0., 1., 1.,
+            1., 1., 1., 1.
         ];
+
+        let colors_memory_buffer = wasm_bindgen::memory()
+            .dyn_into::<WebAssembly::Memory>()
+            .unwrap()
+            .buffer();
+        let color_vals_location = colors.as_ptr() as u32 / 4;
+        let color_vals_array = js_sys::Float32Array::new(&colors_memory_buffer)
+            .subarray(color_vals_location, color_vals_location + colors.len() as u32);
+        gl.buffer_data_with_array_buffer_view(GL::ARRAY_BUFFER, &color_vals_array, GL::DYNAMIC_DRAW);
+
+        gl.uniform1f(Some(&self.u_opacity), 1.);
 
         let translation_mat = cf::translation_matrix(
             2. * left / canvas_width - 1.,
