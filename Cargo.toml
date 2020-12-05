@@ -1,5 +1,5 @@
 [package]
-name = "runner-game"
+name = "wasm-game-of-life"
 version = "0.1.0"
 authors = ["Alec Chen <alecchendev@gmail.com>"]
 edition = "2018"
