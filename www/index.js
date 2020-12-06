@@ -11,6 +11,8 @@ const universe = Universe.new();
 const width = universe.width();
 const height = universe.height();
 
+let cubeRotation = 0.0;
+
 function initShaderProgram(gl, vsSource, fsSource) {
   const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
   const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
@@ -49,22 +51,105 @@ function initBuffers(gl) {
 
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
-  const positions = [
+  /*const positions = [
     4.0, 1.0,
     -1.0, 1.0,
     1.0, -1.0,
     -1.0, -1.0,
+  ];*/
+
+  const positions = [
+    // Front face
+    -1.0, -1.0,  1.0,
+     1.0, -1.0,  1.0,
+     1.0,  1.0,  1.0,
+    -1.0,  1.0,  1.0,
+    
+    // Back face
+    -1.0, -1.0, -1.0,
+    -1.0,  1.0, -1.0,
+     1.0,  1.0, -1.0,
+     1.0, -1.0, -1.0,
+    
+    // Top face
+    -1.0,  1.0, -1.0,
+    -1.0,  1.0,  1.0,
+     1.0,  1.0,  1.0,
+     1.0,  1.0, -1.0,
+    
+    // Bottom face
+    -1.0, -1.0, -1.0,
+     1.0, -1.0, -1.0,
+     1.0, -1.0,  1.0,
+    -1.0, -1.0,  1.0,
+    
+    // Right face
+     1.0, -1.0, -1.0,
+     1.0,  1.0, -1.0,
+     1.0,  1.0,  1.0,
+     1.0, -1.0,  1.0,
+    
+    // Left face
+    /*-1.0, -1.0, -1.0,
+    -1.0, -1.0,  1.0,
+    -1.0,  1.0,  1.0,
+    -1.0,  1.0, -1.0,*/
   ];
 
   gl.bufferData(gl.ARRAY_BUFFER,
                 new Float32Array(positions),
                 gl.STATIC_DRAW);
+
+  /*const colors = [
+    1.0,  1.0,  1.0,  1.0,    // white
+    1.0,  0.0,  0.0,  1.0,    // red
+    0.0,  1.0,  0.0,  1.0,    // green
+    0.0,  0.0,  1.0,  1.0,    // blue
+  ];*/
+
+  const faceColors = [
+    [1.0,  1.0,  1.0,  1.0],    // Front face: white
+    [1.0,  0.0,  0.0,  1.0],    // Back face: red
+    [0.0,  1.0,  0.0,  1.0],    // Top face: green
+    [0.0,  0.0,  1.0,  1.0],    // Bottom face: blue
+    [1.0,  1.0,  0.0,  1.0],    // Right face: yellow
+    //[1.0,  0.0,  1.0,  1.0],    // Left face: purple
+  ];
+
+  let colors = [];
+  for (let j = 0; j < faceColors.length; ++j) {
+    const c = faceColors[j];
+    colors = colors.concat(c, c, c, c);
+  }
+
+  const colorBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+
+  //---
+
+  const indexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+
+  const indices = [
+    0,  1,  2,      0,  2,  3,    // front
+    4,  5,  6,      4,  6,  7,    // back
+    8,  9,  10,     8,  10, 11,   // top
+    12, 13, 14,     12, 14, 15,   // bottom
+    16, 17, 18,     16, 18, 19,   // right
+    //20, 21, 22,     20, 22, 23,   // left
+  ];
+
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
   return {
     position: positionBuffer,
+    color: colorBuffer,
+    indices: indexBuffer,
   };
 }
 
-function drawScene(gl, programInfo, buffers) {
+function drawScene(gl, programInfo, buffers, deltaTime) {
   gl.clearColor(0.012, 0.647, 0.988, 1.0);
   gl.clearDepth(1.0);
   gl.enable(gl.DEPTH_TEST);
@@ -88,9 +173,21 @@ function drawScene(gl, programInfo, buffers) {
   mat4.translate(modelViewMatrix,
                 modelViewMatrix,
                 [-0.0, 0.0, -6.0]);
-  
+  mat4.rotate(modelViewMatrix,
+              modelViewMatrix,
+              cubeRotation * 1.6,
+              [0, 0, 1]);
+  mat4.rotate(modelViewMatrix,
+              modelViewMatrix,
+              cubeRotation * 1.4,
+              [0, 1, 0]);
+  mat4.rotate(modelViewMatrix,
+              modelViewMatrix,
+              cubeRotation * 1.2,
+              [1, 0, 0]);
+  cubeRotation += deltaTime;
   {
-    const numComponents = 2;  // pull out 2 values per iteration - 2d..?
+    const numComponents = 3;  // pull out 2 values per iteration - 2d..?
     const type = gl.FLOAT;    // the data in the buffer is 32bit floats
     const normalize = false;  // don't normalize
     const stride = 0;         // how many bytes to get from one set of values to the next
@@ -107,6 +204,25 @@ function drawScene(gl, programInfo, buffers) {
     gl.enableVertexAttribArray(
         programInfo.attribLocations.vertexPosition);
   }
+  {
+    const numComponents = 4;
+    const type = gl.FLOAT;
+    const normalize = false;
+    const stride = 0;
+    const offset = 0;
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
+    gl.vertexAttribPointer(
+        programInfo.attribLocations.vertexColor,
+        numComponents,
+        type,
+        normalize,
+        stride,
+        offset);
+    gl.enableVertexAttribArray(
+        programInfo.attribLocations.vertexColor);
+  }
+
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
 
   // Tell WebGL to use our program when drawing
 
@@ -124,9 +240,14 @@ function drawScene(gl, programInfo, buffers) {
       modelViewMatrix);
 
   {
-    const offset = 0;
+    /*const offset = 0;
     const vertexCount = 4;
-    gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);
+    gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);*/
+
+    const vertexCount = 30;
+    const type = gl.UNSIGNED_SHORT;
+    const offset = 0;
+    gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
   }
 }
 
@@ -149,22 +270,28 @@ function main() {
 
   // Vertex shader
   const vsSource = `
-  attribute vec4 aVertexPosition;
+    attribute vec4 aVertexPosition;
+    attribute vec4 aVertexColor;
 
-  uniform mat4 uModelViewMatrix;
-  uniform mat4 uProjectionMatrix;
+    uniform mat4 uModelViewMatrix;
+    uniform mat4 uProjectionMatrix;
 
-  void main() {
-    gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
-  }
+    varying lowp vec4 vColor;
+
+    void main() {
+      gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+      vColor = aVertexColor;
+    }
 
   `;
 
   // Fragment shader
   const fsSource = `
-  void main() {
-    gl_FragColor = vec4(0.988, 0.012, 0.647, 1.0);
-  }
+    varying lowp vec4 vColor;
+
+    void main() {
+      gl_FragColor = vColor;
+    }
   `;
 
   const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
@@ -173,6 +300,7 @@ function main() {
     program: shaderProgram,
     attribLocations: {
       vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+      vertexColor: gl.getAttribLocation(shaderProgram, 'aVertexColor'),
     },
     uniformLocations: {
       projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
@@ -182,7 +310,20 @@ function main() {
 
   const buffers = initBuffers(gl);
 
-  drawScene(gl, programInfo, buffers);
+  let then = 0;
+
+  function render(now) {
+    now *= 0.001;
+    const deltaTime = now - then;
+    then = now;
+
+    drawScene(gl, programInfo, buffers, deltaTime);
+
+    requestAnimationFrame(render);
+  }
+
+  requestAnimationFrame(render);
+
 }
 
 window.onload = main;
