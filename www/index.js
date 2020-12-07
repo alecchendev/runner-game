@@ -12,6 +12,15 @@ const width = universe.width();
 const height = universe.height();
 
 let cubeRotation = 0.0;
+let cameraPosition = {
+  x: -3.0,
+  y: 0.0,
+  z: -6.0,
+}
+let cameraAngle = {
+  theta: 1.0,
+  phi: -0.4,
+}
 
 function initShaderProgram(gl, vsSource, fsSource) {
   const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
@@ -170,21 +179,18 @@ function drawScene(gl, programInfo, buffers, deltaTime) {
                   zFar);
 
   const modelViewMatrix = mat4.create();
+  mat4.rotate(modelViewMatrix,
+    modelViewMatrix,
+    cameraAngle.phi,
+    [1, 0, 0]);
+  mat4.rotate(modelViewMatrix,
+    modelViewMatrix,
+    cameraAngle.theta,
+    [0, 1, 0]);
   mat4.translate(modelViewMatrix,
-                modelViewMatrix,
-                [-0.0, 0.0, -6.0]);
-  mat4.rotate(modelViewMatrix,
-              modelViewMatrix,
-              cubeRotation * 1.6,
-              [0, 0, 1]);
-  mat4.rotate(modelViewMatrix,
-              modelViewMatrix,
-              cubeRotation * 1.4,
-              [0, 1, 0]);
-  mat4.rotate(modelViewMatrix,
-              modelViewMatrix,
-              cubeRotation * 1.2,
-              [1, 0, 0]);
+    modelViewMatrix,
+    [-cameraPosition.x, -cameraPosition.y, cameraPosition.z]);
+  
   cubeRotation += deltaTime;
   {
     const numComponents = 3;  // pull out 2 values per iteration - 2d..?
