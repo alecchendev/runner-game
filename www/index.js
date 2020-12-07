@@ -1,4 +1,7 @@
-import { Universe, Cell, Player } from "runner-game";
+import('runner-game')
+  .catch(console.error);
+
+/*import { Universe, Cell, Player } from "runner-game";
 import { memory } from "runner-game/runner_game_bg";
 const { mat4, mat3, vec3 } = glMatrix;
 
@@ -57,13 +60,6 @@ function initBuffers(gl) {
 
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
-  /*const positions = [
-    4.0, 1.0,
-    -1.0, 1.0,
-    1.0, -1.0,
-    -1.0, -1.0,
-  ];*/
-
   const positions = [
     // Front face
     -1.0, -1.0,  1.0,
@@ -95,23 +91,12 @@ function initBuffers(gl) {
      1.0,  1.0,  1.0,
      1.0, -1.0,  1.0,
     
-    // Left face
-    /*-1.0, -1.0, -1.0,
-    -1.0, -1.0,  1.0,
-    -1.0,  1.0,  1.0,
-    -1.0,  1.0, -1.0,*/
   ];
 
   gl.bufferData(gl.ARRAY_BUFFER,
                 new Float32Array(positions),
                 gl.STATIC_DRAW);
 
-  /*const colors = [
-    1.0,  1.0,  1.0,  1.0,    // white
-    1.0,  0.0,  0.0,  1.0,    // red
-    0.0,  1.0,  0.0,  1.0,    // green
-    0.0,  0.0,  1.0,  1.0,    // blue
-  ];*/
 
   const faceColors = [
     [1.0,  1.0,  1.0,  1.0],    // Front face: white
@@ -241,9 +226,6 @@ function drawScene(gl, programInfo, buffers, deltaTime) {
       modelViewMatrix);
 
   {
-    /*const offset = 0;
-    const vertexCount = 4;
-    gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);*/
 
     const vertexCount = 30;
     const type = gl.UNSIGNED_SHORT;
@@ -404,6 +386,7 @@ function main() {
 }
 
 window.onload = main;
+*/
 
 /*
 
