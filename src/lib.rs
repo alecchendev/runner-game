@@ -12,8 +12,93 @@ extern crate js_sys;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-extern {
-    fn alert(s: &str);
+pub struct Point(f32, f32, f32);
+
+#[wasm_bindgen]
+pub struct Player {
+    position: Point,
+    theta: f32,
+    phi: f32,
+
+    look_velh: f32,
+    look_velv: f32,
+    move_vel: f32,
+
+    look_speed: f32,
+    move_speed: f32,
+}
+
+#[wasm_bindgen]
+impl Player {
+    pub fn new() -> Self {
+        Self {
+            position: Point(0., 0., -6.),
+            theta: 0.1,
+            phi: 0.1,
+            look_velh: 0.,
+            look_velv: 0.,
+            move_vel: 0.,
+            look_speed: 0.02,
+            move_speed: 0.02,
+        }
+    }
+
+    pub fn update(&mut self) {
+        self.theta += self.look_velh;
+        self.phi += self.look_velv;
+    }
+
+    pub fn look_right(&mut self) {
+        self.look_velh = self.look_speed;
+    }
+
+    pub fn look_left(&mut self) {
+        self.look_velh = -self.look_speed;
+    }
+
+    pub fn look_up(&mut self) {
+        self.look_velv = -self.look_speed;
+    }
+
+    pub fn look_down(&mut self) {
+        self.look_velv = self.look_speed;
+    }
+
+    pub fn stop_look_right(&mut self) {
+        if self.look_velh == self.look_speed {
+            self.look_velh = 0.;
+        }
+    }
+
+    pub fn stop_look_left(&mut self) {
+        if self.look_velh == -self.look_speed {
+            self.look_velh = 0.;
+        }
+    }
+
+    pub fn stop_look_up(&mut self) {
+        if self.look_velv == -self.look_speed {
+            self.look_velv = 0.;
+        }
+    }
+
+    pub fn stop_look_down(&mut self) {
+        if self.look_velv == self.look_speed {
+            self.look_velv = 0.;
+        }
+    }
+
+    pub fn position(&self) -> Vec<f32> {
+        vec![self.position.0, self.position.1, self.position.2]
+    }
+
+    pub fn theta(&self) -> f32 {
+        self.theta
+    }
+
+    pub fn phi(&self) -> f32 {
+        self.phi
+    }
 }
 
 #[wasm_bindgen]

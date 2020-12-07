@@ -1,4 +1,4 @@
-import { Universe, Cell } from "runner-game";
+import { Universe, Cell, Player } from "runner-game";
 import { memory } from "runner-game/runner_game_bg";
 const { mat4, mat3, vec3 } = glMatrix;
 
@@ -7,19 +7,16 @@ const GRID_COLOR = "#CCCCCC";
 const DEAD_COLOR = "#FFFFFF";
 const ALIVE_COLOR = "#000000";
 
-const universe = Universe.new();
-const width = universe.width();
-const height = universe.height();
+const player = Player.new();
 
-let cubeRotation = 0.0;
 let cameraPosition = {
-  x: -3.0,
-  y: 0.0,
-  z: -6.0,
+  x: 0,
+  y: 0,
+  z: 0,
 }
 let cameraAngle = {
-  theta: 1.0,
-  phi: -0.4,
+  theta: 0,
+  phi: 0,
 }
 
 function initShaderProgram(gl, vsSource, fsSource) {
@@ -190,8 +187,6 @@ function drawScene(gl, programInfo, buffers, deltaTime) {
   mat4.translate(modelViewMatrix,
     modelViewMatrix,
     [-cameraPosition.x, -cameraPosition.y, cameraPosition.z]);
-  
-  cubeRotation += deltaTime;
   {
     const numComponents = 3;  // pull out 2 values per iteration - 2d..?
     const type = gl.FLOAT;    // the data in the buffer is 32bit floats
@@ -322,6 +317,82 @@ function main() {
     now *= 0.001;
     const deltaTime = now - then;
     then = now;
+
+    //player.turn_right();
+
+    document.addEventListener('keydown', function(event) {
+      if (event.defaultPrevented) {
+        return; // Do nothing if the event was already processed
+      }
+    
+      switch (event.key) {
+        case "ArrowDown":
+          // code for "down arrow" key press.
+          player.look_down();
+          break;
+        case "ArrowUp":
+          // code for "up arrow" key press.
+          player.look_up();
+          break;
+        case "ArrowLeft":
+          // code for "left arrow" key press.
+          player.look_left();
+          break;
+        case "ArrowRight":
+          // code for "right arrow" key press.
+          player.look_right();
+          break;
+        default:
+          return; // Quit when this doesn't handle the key event.
+      }
+
+      event.preventDefault();
+    });
+
+    document.addEventListener('keyup', function(event) {
+      if (event.defaultPrevented) {
+        return; // Do nothing if the event was already processed
+      }
+    
+      switch (event.key) {
+        case "ArrowDown":
+          // code for "down arrow" key press.
+          player.stop_look_down();
+          break;
+        case "ArrowUp":
+          // code for "up arrow" key press.
+          player.stop_look_up();
+          break;
+        case "ArrowLeft":
+          // code for "left arrow" key press.
+          player.stop_look_left();
+          break;
+        case "ArrowRight":
+          // code for "right arrow" key press.
+          player.stop_look_right();
+          break;
+        default:
+          return; // Quit when this doesn't handle the key event.
+      }
+
+      event.preventDefault();
+    });
+
+    player.update();
+
+    let pos = player.position();
+    let theta = player.theta();
+    let phi = player.phi();
+
+    cameraPosition = {
+      x: pos[0],
+      y: pos[1],
+      z: pos[2],
+    }
+    cameraAngle = {
+      theta: theta,
+      phi: phi,
+    }
 
     drawScene(gl, programInfo, buffers, deltaTime);
 
