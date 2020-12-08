@@ -1,6 +1,9 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{WebGlProgram, WebGlRenderingContext, WebGlShader};
+use web_sys::*;
+use js_sys::WebAssembly;
+use nalgebra::{Matrix4,Perspective3};
 
 #[wasm_bindgen(start)]
 pub fn start() -> Result<(), JsValue> {
@@ -17,25 +20,155 @@ pub fn start() -> Result<(), JsValue> {
         &context,
         WebGlRenderingContext::VERTEX_SHADER,
         r#"
-        attribute vec4 position;
+        attribute vec4 aVertexPosition;
+        attribute vec4 aVertexColor;
+
+        uniform mat4 uModelViewMatrix;
+        uniform mat4 uProjectionMatrix;
+
+        varying lowp vec4 vColor;
+
         void main() {
-            gl_Position = position;
+            gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+            vColor = aVertexColor;
         }
-    "#,
+        "#,
     )?;
     let frag_shader = compile_shader(
         &context,
         WebGlRenderingContext::FRAGMENT_SHADER,
         r#"
+        varying lowp vec4 vColor;
+
         void main() {
-            gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+            gl_FragColor = vColor;
         }
-    "#,
+        "#,
     )?;
     let program = link_program(&context, &vert_shader, &frag_shader)?;
     context.use_program(Some(&program));
 
-    let vertices: [f32; 9] = [-0.7, -0.7, 0.0, 0.7, -0.7, 0.0, 0.0, 0.7, 0.0];
+    let positions = [
+        // Front face
+        -1.0, -1.0,  1.0,
+        1.0, -1.0,  1.0,
+        1.0,  1.0,  1.0,
+        -1.0,  1.0,  1.0,
+        
+        // Back face
+        -1.0, -1.0, -1.0,
+        -1.0,  1.0, -1.0,
+        1.0,  1.0, -1.0,
+        1.0, -1.0, -1.0,
+        
+        // Top face
+        -1.0,  1.0, -1.0,
+        -1.0,  1.0,  1.0,
+        1.0,  1.0,  1.0,
+        1.0,  1.0, -1.0,
+        
+        // Bottom face
+        -1.0, -1.0, -1.0,
+        1.0, -1.0, -1.0,
+        1.0, -1.0,  1.0,
+        -1.0, -1.0,  1.0,
+        
+        // Right face
+        1.0, -1.0, -1.0,
+        1.0,  1.0, -1.0,
+        1.0,  1.0,  1.0,
+        1.0, -1.0,  1.0,
+    
+    ];
+
+    let positions_memory_buffer = wasm_bindgen::memory()
+        .dyn_into::<WebAssembly::Memory>()
+        .unwrap()
+        .buffer();
+    let vertices_location = positions.as_ptr() as u32 / 4;
+    let position_buffer = context.create_buffer().ok_or("failed to create buffer")?;
+    context.bind_buffer(WebGlRenderingContext::ARRAY_BUFFER, Some(&position_buffer));
+    context.buffer_data_with_array_buffer_view(
+        WebGlRenderingContext::ARRAY_BUFFER,
+        &js_sys::Float32Array::new(&positions_memory_buffer).subarray(
+            vertices_location,
+            vertices_location + positions.len() as u32,
+        ),
+        WebGlRenderingContext::STATIC_DRAW,
+    );
+
+    /*let colors = [
+        1.0,  1.0,  1.0,  1.0,   // Front face: white
+        1.0,  1.0,  1.0,  1.0,
+        1.0,  1.0,  1.0,  1.0,
+        1.0,  1.0,  1.0,  1.0,
+
+        1.0,  0.0,  0.0,  1.0,    // Back face: red
+        1.0,  0.0,  0.0,  1.0,
+        1.0,  0.0,  0.0,  1.0,
+        1.0,  0.0,  0.0,  1.0,
+
+        0.0,  1.0,  0.0,  1.0,    // Top face: green
+        0.0,  1.0,  0.0,  1.0,
+        0.0,  1.0,  0.0,  1.0,
+        0.0,  1.0,  0.0,  1.0,
+
+        0.0,  0.0,  1.0,  1.0,    // Bottom face: blue
+        0.0,  0.0,  1.0,  1.0,
+        0.0,  0.0,  1.0,  1.0,
+        0.0,  0.0,  1.0,  1.0,
+
+        1.0,  1.0,  0.0,  1.0,    // Right face: yellow
+        1.0,  1.0,  0.0,  1.0,
+        1.0,  1.0,  0.0,  1.0,
+        1.0,  1.0,  0.0,  1.0,
+
+        //[1.0,  0.0,  1.0,  1.0],    // Left face: purple
+    ];
+
+    let colors_memory_buffer = wasm_bindgen::memory()
+        .dyn_into::<WebAssembly::Memory>()
+        .unwrap()
+        .buffer();
+    let colors_location = colors.as_ptr() as u32;
+    let color_buffer = context.create_buffer().ok_or("failed to create buffer")?;
+    context.bind_buffer(WebGlRenderingContext::ARRAY_BUFFER, Some(&color_buffer));
+    context.buffer_data_with_array_buffer_view(
+        WebGlRenderingContext::ARRAY_BUFFER,
+        &js_sys::Float32Array::new(&colors_memory_buffer).subarray(
+            colors_location,
+            colors_location + colors.len() as u32,
+        ),
+        WebGlRenderingContext::STATIC_DRAW,
+    );
+    */
+
+    let indices = [
+        0,  1,  2,      0,  2,  3,    // front
+        4,  5,  6,      4,  6,  7,    // back
+        8,  9,  10,     8,  10, 11,   // top
+        12, 13, 14,     12, 14, 15,   // bottom
+        16, 17, 18,     16, 18, 19,   // right
+        //20, 21, 22,     20, 22, 23,   // left
+    ];
+
+    let indices_memory_buffer = wasm_bindgen::memory()
+        .dyn_into::<WebAssembly::Memory>()
+        .unwrap()
+        .buffer();
+    let indices_location = indices.as_ptr() as u32 / 2;
+    let indices_buffer = context.create_buffer().unwrap();
+    context.bind_buffer(WebGlRenderingContext::ELEMENT_ARRAY_BUFFER, Some(&indices_buffer));
+    context.buffer_data_with_array_buffer_view(
+        WebGlRenderingContext::ELEMENT_ARRAY_BUFFER,
+        &js_sys::Uint16Array::new(&indices_memory_buffer).subarray(
+            indices_location,
+            indices_location + indices.len() as u32,
+        ),
+        WebGlRenderingContext::STATIC_DRAW
+    );
+
+    /*let vertices: [f32; 9] = [-0.7, -0.7, 0.0, 0.7, -0.7, 0.0, 0.0, 0.7, 0.0];
 
     let buffer = context.create_buffer().ok_or("failed to create buffer")?;
     context.bind_buffer(WebGlRenderingContext::ARRAY_BUFFER, Some(&buffer));
@@ -56,18 +189,84 @@ pub fn start() -> Result<(), JsValue> {
             &vert_array,
             WebGlRenderingContext::STATIC_DRAW,
         );
-    }
+    }*/
+
+    // CONSTATNS
+    let canvas_width = 720.;
+    let canvas_height = 480.;
+    let half_display_size = 0.9 * canvas_height / 2.0;
+    let bottom = canvas_height / 2.0 - half_display_size;
+    let top = canvas_height / 2.0 + half_display_size;
+    let left = canvas_width / 2.0 - half_display_size;
+    let right = canvas_width / 2.0 + half_display_size;
+
+    let FIELD_OF_VIEW = 45.0 * std::f32::consts::PI / 180.0;
+    let aspect = canvas_width / canvas_height;
+    let Z_NEAR = 0.1;
+    let Z_FAR = 100.0;
+    let Z_PLANE = (std::f32::consts::PI / 8.0).tan();
+
+    let theta: f32 = -0.0;
+    let phi: f32 = -0.0;
+
+    let position = vec![0.0, 0.0, -10.0];
+
+    // UNIFORM LOCATIONS
+    let projection_location = context.get_uniform_location(&program, "uProjectionMatrix").unwrap();
+    let modelview_location = context.get_uniform_location(&program, "uModelViewMatrix").unwrap();
+
+    // PROJECTION
+    let projection_matrix_tmp: Perspective3<f32> = Perspective3::new(aspect, FIELD_OF_VIEW, Z_NEAR, Z_FAR);
+    let mut projection_matrix: [f32; 16] = [0.; 16];
+    projection_matrix.copy_from_slice(projection_matrix_tmp.as_matrix().as_slice());
+
+    // MODELVIEW
+    let rotate_x_axis: [f32; 16] = [
+        1., 0., 0., 0.,
+        0., phi.cos(), -phi.sin(), 0.,
+        0., phi.sin(), phi.cos(), 0.,
+        0., 0., 0., 1.,
+    ];
+
+    let rotate_y_axis: [f32; 16] = [
+        theta.cos(),  0., theta.sin(), 0.,
+        0., 1., 0., 0.,
+        -theta.sin(), 0., theta.cos(), 0.,
+        0., 0., 0., 1.,
+    ];
+
+    let translation_matrix: [f32; 16] = translation_matrix(
+        -position[0],
+        -position[1],
+        position[2]
+    );
+
+    let rotation_matrix = mult_matrix_4(rotate_x_axis, rotate_y_axis);
+    let modelview_matrix = mult_matrix_4(translation_matrix, rotation_matrix);
+
+    context.uniform_matrix4fv_with_f32_array(Some(&projection_location), false, &projection_matrix);
+    context.uniform_matrix4fv_with_f32_array(Some(&modelview_location), false, &modelview_matrix);
 
     context.vertex_attrib_pointer_with_i32(0, 3, WebGlRenderingContext::FLOAT, false, 0, 0);
     context.enable_vertex_attrib_array(0);
 
-    context.clear_color(0.0, 0.0, 0.0, 1.0);
-    context.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);
+    context.vertex_attrib_pointer_with_i32(1, 4, WebGlRenderingContext::FLOAT, false, 0, 0);
+    context.enable_vertex_attrib_array(1);
 
-    context.draw_arrays(
+    context.clear_color(0.012, 0.647, 0.988, 1.0);
+    context.clear_depth(1.0);
+    context.enable(WebGlRenderingContext::DEPTH_TEST);
+    context.depth_func(WebGlRenderingContext::LEQUAL);
+    context.clear(WebGlRenderingContext::COLOR_BUFFER_BIT | WebGlRenderingContext::DEPTH_BUFFER_BIT);
+
+    //context.bind_buffer(WebGlRenderingContext::ARRAY_BUFFER, Some(&position_buffer));
+    //context.bind_buffer(WebGlRenderingContext::ELEMENT_ARRAY_BUFFER, Some(&indices_buffer));
+
+    context.draw_elements_with_i32(
         WebGlRenderingContext::TRIANGLES,
-        0,
-        (vertices.len() / 3) as i32,
+        (positions.len() / 3) as i32,
+        WebGlRenderingContext::UNSIGNED_SHORT,
+        0
     );
     Ok(())
 }
@@ -122,6 +321,59 @@ pub fn link_program(
     }
 }
 
+
+// UTILS
+pub fn translation_matrix(tx: f32, ty: f32, tz: f32) -> [f32; 16] {
+    let mut return_var = [0.; 16];
+
+    return_var[0] = 1.;
+    return_var[5] = 1.;
+    return_var[10] = 1.;
+    return_var[15] = 1.;
+
+    return_var[12] = tx;
+    return_var[13] = ty;
+    return_var[14] = tz;
+
+    return_var
+}
+
+pub fn scaling_matrix(sx: f32, sy: f32, sz: f32) -> [f32; 16] {
+    let mut return_var = [0.; 16];
+
+    return_var[0] = sx;
+    return_var[5] = sy;
+    return_var[10] = sz;
+    return_var[15] = 1.;
+
+    return_var
+}
+
+pub fn mult_matrix_4(a: [f32; 16], b: [f32; 16]) -> [f32; 16] {
+    let mut return_var = [0.; 16];
+
+    return_var[0] = a[0] * b[0] + a[1] * b[4] + a[2] * b[8] + a[3] * b[12];
+    return_var[1] = a[0] * b[1] + a[1] * b[5] + a[2] * b[9] + a[3] * b[13];
+    return_var[2] = a[0] * b[2] + a[1] * b[6] + a[2] * b[10] + a[3] * b[14];
+    return_var[3] = a[0] * b[3] + a[1] * b[7] + a[2] * b[11] + a[3] * b[15];
+
+    return_var[4] = a[4] * b[0] + a[5] * b[4] + a[6] * b[8] + a[7] * b[12];
+    return_var[5] = a[4] * b[1] + a[5] * b[5] + a[6] * b[9] + a[7] * b[13];
+    return_var[6] = a[4] * b[2] + a[5] * b[6] + a[6] * b[10] + a[7] * b[14];
+    return_var[7] = a[4] * b[3] + a[5] * b[7] + a[6] * b[11] + a[7] * b[15];
+
+    return_var[8] = a[8] * b[0] + a[9] * b[4] + a[10] * b[8] + a[11] * b[12];
+    return_var[9] = a[8] * b[1] + a[9] * b[5] + a[10] * b[9] + a[11] * b[13];
+    return_var[10] = a[8] * b[2] + a[9] * b[6] + a[10] * b[10] + a[11] * b[14];
+    return_var[11] = a[8] * b[3] + a[9] * b[7] + a[10] * b[11] + a[11] * b[15];
+
+    return_var[12] = a[12] * b[0] + a[13] * b[4] + a[14] * b[8] + a[15] * b[12];
+    return_var[13] = a[12] * b[1] + a[13] * b[5] + a[14] * b[9] + a[15] * b[13];
+    return_var[14] = a[12] * b[2] + a[13] * b[6] + a[14] * b[10] + a[15] * b[14];
+    return_var[15] = a[12] * b[3] + a[13] * b[7] + a[14] * b[11] + a[15] * b[15];
+
+    return_var
+}
 
 /*mod utils;
 
