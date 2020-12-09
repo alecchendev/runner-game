@@ -1,7 +1,7 @@
-import('runner-game')
+/*import('runner-game')
   .catch(console.error);
-
-/*import { Universe, Cell, Player } from "runner-game";
+//*/
+import { Universe, Cell, Player } from "runner-game";
 import { memory } from "runner-game/runner_game_bg";
 const { mat4, mat3, vec3 } = glMatrix;
 
@@ -237,8 +237,8 @@ function drawScene(gl, programInfo, buffers, deltaTime) {
 
 function main() {
   const canvas = document.getElementById("runner-game-canvas");
-  canvas.width = 720;
-  canvas.height = 480;
+  canvas.width = 1080;
+  canvas.height = 720;
 
   const gl = canvas.getContext('webgl');
 
@@ -295,70 +295,74 @@ function main() {
 
   let then = 0;
 
+  document.addEventListener("click", function () {
+    document.body.requestPointerLock();
+  });
+
+  document.body.addEventListener("mousemove", function (event) {
+    if (document.pointerLockElement === document.body) {
+      //console.log("Moved by " + event.movementX + ", " + event.movementY);
+      player.mouse_look(event.movementX, event.movementY);
+    }
+    
+  });
+
+  const LOOK = {
+    "ArrowLeft": 0,
+    "ArrowUp": 1,
+    "ArrowRight": 2,
+    "ArrowDown": 3,
+  };
+
+  const MOVE = {
+    "a": 0,
+    "w": 1,
+    "d": 2,
+    "s": 3,
+    " ": 4,
+  };
+
+  document.addEventListener('keydown', function(event) {
+    if (event.defaultPrevented) {
+      return; // Do nothing if the event was already processed
+    }
+
+    // this is automatic in at least chrome but just in case
+    if (event.key === "esc") {
+      document.exitPointerLock();
+    }
+
+    if (event.key in LOOK) {
+      player.look(LOOK[event.key]);
+    }
+
+    if (event.key in MOVE) {
+      player.go(MOVE[event.key]);
+    }
+
+    event.preventDefault();
+  });
+
+  document.addEventListener('keyup', function(event) {
+    if (event.defaultPrevented) {
+      return; // Do nothing if the event was already processed
+    }
+  
+    if (event.key in LOOK) {
+      player.stop_look(LOOK[event.key]);
+    }
+
+    if (event.key in MOVE) {
+      player.stop(MOVE[event.key]);
+    }
+
+    event.preventDefault();
+  });
+
   function render(now) {
     now *= 0.001;
     const deltaTime = now - then;
     then = now;
-
-    //player.turn_right();
-
-    document.addEventListener('keydown', function(event) {
-      if (event.defaultPrevented) {
-        return; // Do nothing if the event was already processed
-      }
-    
-      switch (event.key) {
-        case "ArrowDown":
-          // code for "down arrow" key press.
-          player.look_down();
-          break;
-        case "ArrowUp":
-          // code for "up arrow" key press.
-          player.look_up();
-          break;
-        case "ArrowLeft":
-          // code for "left arrow" key press.
-          player.look_left();
-          break;
-        case "ArrowRight":
-          // code for "right arrow" key press.
-          player.look_right();
-          break;
-        default:
-          return; // Quit when this doesn't handle the key event.
-      }
-
-      event.preventDefault();
-    });
-
-    document.addEventListener('keyup', function(event) {
-      if (event.defaultPrevented) {
-        return; // Do nothing if the event was already processed
-      }
-    
-      switch (event.key) {
-        case "ArrowDown":
-          // code for "down arrow" key press.
-          player.stop_look_down();
-          break;
-        case "ArrowUp":
-          // code for "up arrow" key press.
-          player.stop_look_up();
-          break;
-        case "ArrowLeft":
-          // code for "left arrow" key press.
-          player.stop_look_left();
-          break;
-        case "ArrowRight":
-          // code for "right arrow" key press.
-          player.stop_look_right();
-          break;
-        default:
-          return; // Quit when this doesn't handle the key event.
-      }
-
-      event.preventDefault();
-    });
 
     player.update();
 
@@ -386,7 +390,7 @@ function main() {
 }
 
 window.onload = main;
-*/
+//*/
 
 /*
 
