@@ -297,10 +297,6 @@ function main() {
       document.exitPointerLock();
     }
 
-    if (event.key in LOOK) {
-      player.look(LOOK[event.key]);
-    }
-
     if (event.key in MOVE) {
       player.go(MOVE[event.key]);
     }
@@ -311,10 +307,6 @@ function main() {
   document.addEventListener('keyup', function(event) {
     if (event.defaultPrevented) {
       return; // Do nothing if the event was already processed
-    }
-  
-    if (event.key in LOOK) {
-      player.stop_look(LOOK[event.key]);
     }
 
     if (event.key in MOVE) {

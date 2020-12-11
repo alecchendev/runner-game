@@ -41,13 +41,10 @@ pub struct Player {
     theta: f32,
     phi: f32,
 
-    look_velh: f32,
-    look_velv: f32,
     move_velh: f32,
     move_velz: f32,
     move_velv: f32,
 
-    look_speed: f32,
     look_sens: f32,
     move_speed: f32,
     jump_speed: f32,
@@ -82,12 +79,9 @@ impl Player {
             position: Point::new(2., 0., -5.),
             theta: 0.0,
             phi: 0.0,
-            look_velh: 0.,
-            look_velv: 0.,
             move_velh: 0.,
             move_velz: 0.,
             move_velv: 0.,
-            look_speed: 0.02,
             look_sens: 0.0008,
             move_speed: 0.1,
             jump_speed: 0.25,
@@ -97,16 +91,6 @@ impl Player {
     }
 
     pub fn update(&mut self) {
-        self.theta += self.look_velh;
-        self.phi = {
-            if (self.phi + self.look_velv).abs() < std::f32::consts::PI / 2. {
-                self.phi + self.look_velv
-            } else {
-                self.phi
-            }
-        };
-        
-
         let del_x = self.theta.sin() * self.move_velz + self.theta.cos() * self.move_velh;
         let del_z = self.theta.cos() * self.move_velz + -self.theta.sin() * self.move_velh;
         self.position.x += del_x; // theta only
@@ -167,64 +151,6 @@ impl Player {
                 self.phi
             }
         };
-    }
-
-    pub fn look(&mut self, look: Look) {
-        match look {
-            Look::Left => self.look_left(),
-            Look::Up => self.look_up(),
-            Look::Right => self.look_right(),
-            Look::Down => self.look_down(),
-        }
-    }
-
-    pub fn stop_look(&mut self, look: Look) {
-        match look {
-            Look::Left => self.stop_look_left(),
-            Look::Up => self.stop_look_up(),
-            Look::Right => self.stop_look_right(),
-            Look::Down => self.stop_look_down(),
-        }
-    }
-
-    pub fn look_right(&mut self) {
-        self.look_velh = self.look_speed;
-    }
-
-    pub fn look_left(&mut self) {
-        self.look_velh = -self.look_speed;
-    }
-
-    pub fn look_up(&mut self) {
-        self.look_velv = -self.look_speed;
-    }
-
-    pub fn look_down(&mut self) {
-        self.look_velv = self.look_speed;
-    }
-
-    pub fn stop_look_right(&mut self) {
-        if self.look_velh == self.look_speed {
-            self.look_velh = 0.;
-        }
-    }
-
-    pub fn stop_look_left(&mut self) {
-        if self.look_velh == -self.look_speed {
-            self.look_velh = 0.;
-        }
-    }
-
-    pub fn stop_look_up(&mut self) {
-        if self.look_velv == -self.look_speed {
-            self.look_velv = 0.;
-        }
-    }
-
-    pub fn stop_look_down(&mut self) {
-        if self.look_velv == self.look_speed {
-            self.look_velv = 0.;
-        }
     }
 
     pub fn position(&self) -> Vec<f32> {
