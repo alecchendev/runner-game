@@ -53,3 +53,27 @@ impl std::ops::Sub for Vec3 {
         }
     }
 }
+
+impl std::ops::Mul<f32> for Vec3 {
+    type Output = Self;
+
+    fn mul(self, scalar: f32) -> Self {
+        Self {
+            x: self.x * scalar,
+            y: self.y * scalar,
+            z: self.z * scalar,
+        }
+    }
+}
+
+impl std::ops::Div<f32> for Vec3 {
+    type Output = Self;
+
+    fn div(self, scalar: f32) -> Self {
+        Self {
+            x: self.x / scalar,
+            y: self.y / scalar,
+            z: self.z / scalar,
+        }
+    }
+}

@@ -38,6 +38,8 @@ pub struct Player {
 
     gravity: f32,
 
+    bounding_box: BoundingBox,
+
     universe: Universe,
 }
 
@@ -54,8 +56,11 @@ pub enum Go {
 impl Player {
     pub fn new() -> Self {
         log("Created Player!");
+        let position = Vec3::new(2., 0., -5.);
+        let player_dims = Vec3::new(1., 2., 1.);
+        let bounding_box = BoundingBox::new(position - (player_dims / 2.), position + (player_dims / 2.));
         Self {
-            position: Vec3::new(2., 0., -5.),
+            position,
             theta: 0.0,
             phi: 0.0,
             move_velh: 0.,
@@ -65,6 +70,7 @@ impl Player {
             move_speed: 0.1,
             jump_speed: 0.25,
             gravity: -0.015,
+            bounding_box,
             universe: Universe::new(),
         }
     }
@@ -146,6 +152,37 @@ impl Player {
 
     pub fn universe(&self) -> Universe {
         self.universe.clone()
+    }
+}
+
+pub struct BoundingBox {
+    origin: Vec3,
+    dims: Vec3,
+}
+
+impl BoundingBox {
+    pub fn new(origin: Vec3, dims: Vec3) -> Self {
+        Self {
+            origin,
+            dims,
+        }
+    }
+}
+
+pub struct Block {
+    origin: Vec3,
+    dims: Vec3,
+    bounding_box: BoundingBox,
+}
+
+impl Block {
+    pub fn new(origin: Vec3, dims: Vec3) -> Self {
+        let bounding_box = BoundingBox::new(origin, dims);
+        Self {
+            origin,
+            dims,
+            bounding_box,
+        }
     }
 }
 
