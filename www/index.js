@@ -22,7 +22,7 @@ let cameraAngle = {
   phi: 0,
 }
 
-const universe = Universe.new();
+const universe = player.universe();
 const positions = universe.positions();
 const faceColors = universe.colors();
 const indices = universe.indices();

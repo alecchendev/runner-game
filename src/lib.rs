@@ -430,6 +430,8 @@ pub struct Player {
     jump_speed: f32,
 
     gravity: f32,
+
+    universe: Universe,
 }
 
 #[wasm_bindgen]
@@ -467,6 +469,7 @@ impl Player {
             move_speed: 0.1,
             jump_speed: 0.25,
             gravity: -0.015,
+            universe: Universe::new(),
         }
     }
 
@@ -612,6 +615,10 @@ impl Player {
     pub fn phi(&self) -> f32 {
         self.phi
     }
+
+    pub fn universe(&self) -> Universe {
+        self.universe.clone()
+    }
 }
 
 #[wasm_bindgen]
@@ -623,6 +630,7 @@ pub enum Cell {
 }
 
 #[wasm_bindgen]
+#[derive(Clone)]
 pub struct Universe {
     width: u32,
     height: u32,
