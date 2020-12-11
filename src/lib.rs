@@ -627,6 +627,9 @@ pub struct Universe {
     width: u32,
     height: u32,
     cells: Vec<Cell>,
+    positions: Vec<f32>,
+    colors: Vec<f32>,
+    indices: Vec<u32>,
 }
 
 #[wasm_bindgen]
@@ -642,10 +645,61 @@ impl Universe {
             })
             .collect();
         
+        let positions = vec![
+            // Front face
+            -1.0, -1.0,  1.0,
+             1.0, -1.0,  1.0,
+             1.0,  1.0,  1.0,
+            -1.0,  1.0,  1.0,
+            
+            // Back face
+            -1.0, -1.0, -1.0,
+            -1.0,  1.0, -1.0,
+             1.0,  1.0, -1.0,
+             1.0, -1.0, -1.0,
+            
+            // Top face
+            -1.0,  1.0, -1.0,
+            -1.0,  1.0,  1.0,
+             1.0,  1.0,  1.0,
+             1.0,  1.0, -1.0,
+            
+            // Bottom face
+            -1.0, -1.0, -1.0,
+             1.0, -1.0, -1.0,
+             1.0, -1.0,  1.0,
+            -1.0, -1.0,  1.0,
+            
+            // Right face
+             1.0, -1.0, -1.0,
+             1.0,  1.0, -1.0,
+             1.0,  1.0,  1.0,
+             1.0, -1.0,  1.0,
+            
+        ];
+        let colors = vec![
+            1.0,  1.0,  1.0,  1.0,    // Front face: white
+            1.0,  0.0,  0.0,  1.0,    // Back face: red
+            0.0,  1.0,  0.0,  1.0,    // Top face: green
+            0.0,  0.0,  1.0,  1.0,    // Bottom face: blue
+            1.0,  1.0,  0.0,  1.0,    // Right face: yellow
+        ];
+
+        let indices = vec![
+            0,  1,  2,      0,  2,  3,    // front
+            4,  5,  6,      4,  6,  7,    // back
+            8,  9,  10,     8,  10, 11,   // top
+            12, 13, 14,     12, 14, 15,   // bottom
+            16, 17, 18,     16, 18, 19,   // right
+            //20, 21, 22,     20, 22, 23,   // left
+        ];
         Universe {
             width,
             height,
             cells,
+            positions,
+            colors,
+            indices,
         }
     }
 
@@ -699,6 +753,18 @@ impl Universe {
 
     pub fn height(&self) -> u32 {
         self.height
+    }
+
+    pub fn positions(&self) -> Vec<f32> {
+        self.positions.clone()
+    }
+
+    pub fn colors(&self) -> Vec<f32> {
+        self.colors.clone()
+    }
+
+    pub fn indices(&self) -> Vec<u32> {
+        self.indices.clone()
     }
 
     pub fn cells(&self) -> *const Cell {
