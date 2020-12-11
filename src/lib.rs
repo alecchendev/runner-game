@@ -1,4 +1,5 @@
 mod utils;
+use utils::Vec3;
 
 use wasm_bindgen::prelude::*;
 
@@ -21,30 +22,9 @@ extern "C" {
     fn log(s: &str);
 }
 
-#[derive(Clone, Copy)]
-pub struct Point {
-    x: f32,
-    y: f32,
-    z: f32,
-}
-
-impl Point {
-    fn new(x: f32, y: f32, z: f32) -> Self {
-        Self {
-            x,
-            y,
-            z,
-        }
-    }
-
-    fn to_vec(&self) -> Vec<f32> {
-        vec![self.x, self.y, self.z]
-    }
-}
-
 #[wasm_bindgen]
 pub struct Player {
-    position: Point,
+    position: Vec3,
     theta: f32,
     phi: f32,
 
@@ -71,19 +51,11 @@ pub enum Go {
 }
 
 #[wasm_bindgen]
-pub enum Look {
-    Left = 0,
-    Up = 1,
-    Right = 2,
-    Down = 3,
-}
-
-#[wasm_bindgen]
 impl Player {
     pub fn new() -> Self {
         log("Created Player!");
         Self {
-            position: Point::new(2., 0., -5.),
+            position: Vec3::new(2., 0., -5.),
             theta: 0.0,
             phi: 0.0,
             move_velh: 0.,
@@ -185,11 +157,11 @@ pub enum Surface {
 
 #[derive(Clone)]
 pub struct Tri {
-    vertices: [Point; 3],
+    vertices: [Vec3; 3],
 }
 
 impl Tri {
-    pub fn new(v1: Point, v2: Point, v3: Point) -> Self {
+    pub fn new(v1: Vec3, v2: Vec3, v3: Vec3) -> Self {
         Self {
             vertices: [v1, v2, v3],
         }
@@ -213,7 +185,7 @@ pub struct Quad {
 }
 
 impl Quad {
-    pub fn new(v1: Point, v2: Point, v3: Point, v4: Point) -> Self {
+    pub fn new(v1: Vec3, v2: Vec3, v3: Vec3, v4: Vec3) -> Self {
         Self {
             tris: [Tri::new(v1, v2, v3), Tri::new(v1, v3, v4)]
         }
@@ -246,40 +218,40 @@ impl Universe {
     pub fn new() -> Universe {
         let surfaces = vec![
             Surface::Quad(Quad::new(
-                Point::new(-1.0, -1.0,  1.0),
-                Point::new(1.0, -1.0,  1.0),
-                Point::new(1.0,  1.0,  1.0),
-                Point::new(-1.0,  1.0,  1.0),
+                Vec3::new(-1.0, -1.0,  1.0),
+                Vec3::new(1.0, -1.0,  1.0),
+                Vec3::new(1.0,  1.0,  1.0),
+                Vec3::new(-1.0,  1.0,  1.0),
             )),
             Surface::Quad(Quad::new(
-                Point::new(-1.0, -1.0,  -1.0),
-                Point::new(-1.0, 1.0,  -1.0),
-                Point::new(1.0,  1.0,  -1.0),
-                Point::new(1.0,  -1.0,  -1.0),
+                Vec3::new(-1.0, -1.0,  -1.0),
+                Vec3::new(-1.0, 1.0,  -1.0),
+                Vec3::new(1.0,  1.0,  -1.0),
+                Vec3::new(1.0,  -1.0,  -1.0),
             )),
             Surface::Quad(Quad::new(
-                Point::new(-1.0, 1.0,  -1.0),
-                Point::new(-1.0, 1.0,  1.0),
-                Point::new(1.0,  1.0,  1.0),
-                Point::new(1.0,  1.0,  -1.0),
+                Vec3::new(-1.0, 1.0,  -1.0),
+                Vec3::new(-1.0, 1.0,  1.0),
+                Vec3::new(1.0,  1.0,  1.0),
+                Vec3::new(1.0,  1.0,  -1.0),
             )),
             Surface::Quad(Quad::new(
-                Point::new(-1.0, -1.0,  -1.0),
-                Point::new(1.0, -1.0,  -1.0),
-                Point::new(1.0, -1.0,  1.0),
-                Point::new(-1.0,  -1.0,  1.0),
+                Vec3::new(-1.0, -1.0,  -1.0),
+                Vec3::new(1.0, -1.0,  -1.0),
+                Vec3::new(1.0, -1.0,  1.0),
+                Vec3::new(-1.0,  -1.0,  1.0),
             )),
             Surface::Quad(Quad::new(
-                Point::new(1.0, -1.0,  -1.0),
-                Point::new(1.0, 1.0,  -1.0),
-                Point::new(1.0,  1.0,  1.0),
-                Point::new(1.0,  -1.0,  1.0),
+                Vec3::new(1.0, -1.0,  -1.0),
+                Vec3::new(1.0, 1.0,  -1.0),
+                Vec3::new(1.0,  1.0,  1.0),
+                Vec3::new(1.0,  -1.0,  1.0),
             )),
             Surface::Quad(Quad::new(
-                Point::new(1.0, 0.1, -1.0),
-                Point::new(1.0, -0.1, 1.0),
-                Point::new(3.0, -0.1, 1.0),
-                Point::new(3.0, 0.1, -1.0),
+                Vec3::new(1.0, 0.1, -1.0),
+                Vec3::new(1.0, -0.1, 1.0),
+                Vec3::new(3.0, -0.1, 1.0),
+                Vec3::new(3.0, 0.1, -1.0),
             ))
         ];
 
