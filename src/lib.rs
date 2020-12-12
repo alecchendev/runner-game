@@ -1,6 +1,8 @@
 mod utils;
 use utils::Vec3;
 
+use std::cmp::min;
+
 use wasm_bindgen::prelude::*;
 
 extern crate js_sys;
@@ -41,6 +43,8 @@ pub struct Player {
     bounding_box: BoundingBox,
 
     universe: Universe,
+
+    on_ground: bool,
 }
 
 #[wasm_bindgen]
@@ -56,9 +60,9 @@ pub enum Go {
 impl Player {
     pub fn new() -> Self {
         log("Created Player!");
-        let position = Vec3::new(2., 0., -5.);
-        let player_dims = Vec3::new(1., 2., 1.);
-        let bounding_box = BoundingBox::new(position - (player_dims / 2.), position + (player_dims / 2.));
+        let position = Vec3::new(2., 1.5, -5.);
+        let player_dims = Vec3::new(0.1, 2., 0.1);
+        let bounding_box = BoundingBox::new(position - (player_dims / 2.), player_dims);
         Self {
             position,
             theta: 0.0,
@@ -72,21 +76,77 @@ impl Player {
             gravity: -0.015,
             bounding_box,
             universe: Universe::new(),
+            on_ground: false,
         }
     }
 
     pub fn update(&mut self) {
+        self.move_velv += self.gravity;
+
         let del_x = self.theta.sin() * self.move_velz + self.theta.cos() * self.move_velh;
         let del_z = self.theta.cos() * self.move_velz + -self.theta.sin() * self.move_velh;
-        self.position.x += del_x; // theta only
-        self.position.y += self.move_velv; // good
-        self.position.z += del_z; // theta only
-        
-        if self.position.y > 0. {
-            self.move_velv += self.gravity;
-        } else {
-            self.position.y = 0.;
+        let del_y = self.move_velv;
+
+        let mut vel = Vec3::new(del_x, del_y, del_z);
+
+        for block in &(self.universe.blocks) {
+            
+    
+            let a = &self.bounding_box;
+            let b = &block.bounding_box;//BoundingBox::new(Vec3::new(-1., -1., -1.), Vec3::new(2., 2., 2.));
+    
+            let a_max = a.get_max();
+            let a_min = a.get_min();
+            let b_max = b.get_max();
+            let b_min = b.get_min();
+    
+            let a_max_new = a_max + vel;
+            let a_min_new = a_min + vel;
+            let x_overlap = (a_min_new.x <= b_max.x) && (a_max_new.x >= b_min.x);
+            let y_overlap = (a_min_new.y <= b_max.y) && (a_max_new.y >= b_min.y);
+            let z_overlap = (a_min_new.z <= b_max.z) && (a_max_new.z >= b_min.z);
+            let will_collide = x_overlap && y_overlap && z_overlap;
+    
+            if will_collide {
+                let x_overlap = (a_min.x <= b_max.x) && (a_max.x >= b_min.x);
+                let y_overlap = (a_min.y <= b_max.y) && (a_max.y >= b_min.y);
+                let z_overlap = (a_min.z <= b_max.z) && (a_max.z >= b_min.z);
+
+                if !x_overlap && y_overlap && z_overlap {
+                    vel.x = 0.;
+                } else if x_overlap && !y_overlap && z_overlap {
+                    vel.y = 0.;
+                    self.move_velv = 0.;
+                    self.on_ground = true;
+                } else if x_overlap && y_overlap && !z_overlap {
+                    vel.z = 0.;
+                } else {
+                    let x_time_collide = (a_min.x - b_max.x).abs().min((a_max.x - b_min.x).abs()) / vel.x;
+                    let y_time_collide = (a_min.y - b_max.y).abs().min((a_max.y - b_min.y).abs()) / vel.y;
+                    let z_time_collide = (a_min.z - b_max.z).abs().min((a_max.z - b_min.z).abs()) / vel.z;
+                    if x_time_collide <= y_time_collide && x_time_collide <= z_time_collide {
+                        vel.x = 0.;
+                    }
+                    if y_time_collide <= x_time_collide && y_time_collide <= z_time_collide {
+                        vel.y = 0.;
+                        self.move_velv = 0.;
+                        self.on_ground = true;
+                    }
+                    if z_time_collide <= x_time_collide && z_time_collide <= y_time_collide {
+                        vel.z = 0.;
+                    }
+                }
+            }
         }
+
+        self.position = self.position + vel;
+
+        self.bounding_box.origin = self.position - (self.bounding_box.dims / 2.);
+        
+    }
+
+    pub fn collide(&mut self, block: Block) {
+        
     }
 
     pub fn go(&mut self, go: Go) {
@@ -95,7 +155,7 @@ impl Player {
             Go::Forward => self.move_velz = self.move_speed,
             Go::Right => self.move_velh = self.move_speed,
             Go::Back => self.move_velz = -self.move_speed,
-            Go::Jump => if self.position.y == 0. { self.move_velv = self.jump_speed } else { },
+            Go::Jump => if self.on_ground { self.move_velv = self.jump_speed; self.on_ground = false; } else { },
         }
     }
 
@@ -155,6 +215,7 @@ impl Player {
     }
 }
 
+#[derive(Clone)]
 pub struct BoundingBox {
     origin: Vec3,
     dims: Vec3,
@@ -167,8 +228,29 @@ impl BoundingBox {
             dims,
         }
     }
+
+    fn get_max(&self) -> Vec3 {
+        self.origin + self.dims
+    }
+
+    fn get_min(&self) -> Vec3 {
+        self.origin
+    }
+
+    pub fn intersects(&self, other: &BoundingBox) -> bool {
+        let a_max = self.get_max();
+        let a_min = self.get_min();
+        let b_max = other.get_max();
+        let b_min = other.get_min();
+
+        return (a_min.x <= b_max.x) && (a_max.x >= b_min.x) &&
+               (a_min.y <= b_max.y) && (a_max.y >= b_min.y) &&
+               (a_min.z <= b_max.z) && (a_max.z >= b_min.z);
+    }
 }
 
+#[wasm_bindgen]
+#[derive(Clone)]
 pub struct Block {
     origin: Vec3,
     dims: Vec3,
@@ -244,6 +326,7 @@ impl Quad {
 #[wasm_bindgen]
 #[derive(Clone)]
 pub struct Universe {
+    blocks: Vec<Block>,
     surfaces: Vec<Surface>,
     positions: Vec<f32>,
     colors: Vec<f32>,
@@ -253,6 +336,53 @@ pub struct Universe {
 #[wasm_bindgen]
 impl Universe {
     pub fn new() -> Universe {
+        let blocks = vec![
+            Block::new(Vec3::new(-1., -1., -1.), Vec3::new(1., 1., 1.)),
+            Block::new(Vec3::new(-10., -2., -10.), Vec3::new(20., 1., 20.)),
+        ];
+
+        let mut surfaces: Vec<Surface> = Vec::new();
+        for block in &blocks {
+            surfaces.push(Surface::Quad(Quad::new(
+                block.origin,
+                block.origin + Vec3::new(block.dims.x, 0., 0.),
+                block.origin + Vec3::new(block.dims.x, block.dims.y, 0.),
+                block.origin + Vec3::new(0., block.dims.y, 0.),
+            )));
+            surfaces.push(Surface::Quad(Quad::new(
+                block.origin,
+                block.origin + Vec3::new(block.dims.x, 0., 0.),
+                block.origin + Vec3::new(block.dims.x, 0., block.dims.z),
+                block.origin + Vec3::new(0., 0., block.dims.z),
+            )));
+            surfaces.push(Surface::Quad(Quad::new(
+                block.origin,
+                block.origin + Vec3::new(0., 0., block.dims.z),
+                block.origin + Vec3::new(0., block.dims.y, block.dims.z),
+                block.origin + Vec3::new(0., block.dims.y, 0.),
+            )));
+
+            surfaces.push(Surface::Quad(Quad::new(
+                block.origin + block.dims,
+                block.origin + block.dims - Vec3::new(block.dims.x, 0., 0.),
+                block.origin + block.dims - Vec3::new(block.dims.x, block.dims.y, 0.),
+                block.origin + block.dims - Vec3::new(0., block.dims.y, 0.),
+            )));
+            surfaces.push(Surface::Quad(Quad::new(
+                block.origin + block.dims,
+                block.origin + block.dims - Vec3::new(block.dims.x, 0., 0.),
+                block.origin + block.dims - Vec3::new(block.dims.x, 0., block.dims.z),
+                block.origin + block.dims - Vec3::new(0., 0., block.dims.z),
+            )));
+            surfaces.push(Surface::Quad(Quad::new(
+                block.origin + block.dims,
+                block.origin + block.dims - Vec3::new(0., 0., block.dims.z),
+                block.origin + block.dims - Vec3::new(0., block.dims.y, block.dims.z),
+                block.origin + block.dims - Vec3::new(0., block.dims.y, 0.),
+            )));
+        }
+
+        /*
         let surfaces = vec![
             Surface::Quad(Quad::new(
                 Vec3::new(-1.0, -1.0,  1.0),
@@ -290,7 +420,7 @@ impl Universe {
                 Vec3::new(3.0, -0.1, 1.0),
                 Vec3::new(3.0, 0.1, -1.0),
             ))
-        ];
+        ];*/
 
         let mut positions = vec![];
         let mut indices = vec![];
@@ -371,6 +501,7 @@ impl Universe {
         ];*/
 
         Universe {
+            blocks,
             surfaces,
             positions,
             colors,
