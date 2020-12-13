@@ -45,6 +45,8 @@ pub struct Player {
     universe: Universe,
 
     on_ground: bool,
+
+    vel: Vec3,
 }
 
 #[wasm_bindgen]
@@ -61,7 +63,7 @@ impl Player {
     pub fn new() -> Self {
         log("Created Player!");
         let position = Vec3::new(2., 1.5, -5.);
-        let player_dims = Vec3::new(0.1, 2., 0.1);
+        let player_dims = Vec3::new(0.5, 2., 0.5);
         let bounding_box = BoundingBox::new(position - (player_dims / 2.), player_dims);
         Self {
             position,
@@ -77,6 +79,7 @@ impl Player {
             bounding_box,
             universe: Universe::new(),
             on_ground: false,
+            vel: Vec3::new(0., 0., 0.),
         }
     }
 
@@ -89,7 +92,7 @@ impl Player {
 
         let mut vel = Vec3::new(del_x, del_y, del_z);
 
-        for block in &(self.universe.blocks) {
+        for block in &self.universe.blocks {
             
     
             let a = &self.bounding_box;
@@ -102,12 +105,14 @@ impl Player {
     
             let a_max_new = a_max + vel;
             let a_min_new = a_min + vel;
+
             let x_overlap = (a_min_new.x <= b_max.x) && (a_max_new.x >= b_min.x);
             let y_overlap = (a_min_new.y <= b_max.y) && (a_max_new.y >= b_min.y);
             let z_overlap = (a_min_new.z <= b_max.z) && (a_max_new.z >= b_min.z);
             let will_collide = x_overlap && y_overlap && z_overlap;
     
             if will_collide {
+                //log(&(format!("{}, {}, {}, {}", a_min, a_max, b_min, b_max))[..]);
                 let x_overlap = (a_min.x <= b_max.x) && (a_max.x >= b_min.x);
                 let y_overlap = (a_min.y <= b_max.y) && (a_max.y >= b_min.y);
                 let z_overlap = (a_min.z <= b_max.z) && (a_max.z >= b_min.z);
@@ -121,6 +126,7 @@ impl Player {
                 } else if x_overlap && y_overlap && !z_overlap {
                     vel.z = 0.;
                 } else {
+                    //log("This happened");
                     let x_time_collide = (a_min.x - b_max.x).abs().min((a_max.x - b_min.x).abs()) / vel.x;
                     let y_time_collide = (a_min.y - b_max.y).abs().min((a_max.y - b_min.y).abs()) / vel.y;
                     let z_time_collide = (a_min.z - b_max.z).abs().min((a_max.z - b_min.z).abs()) / vel.z;
@@ -141,8 +147,9 @@ impl Player {
 
         self.position = self.position + vel;
 
+        self.vel = vel;
+
         self.bounding_box.origin = self.position - (self.bounding_box.dims / 2.);
-        
     }
 
     pub fn collide(&mut self, block: Block) {
@@ -212,6 +219,10 @@ impl Player {
 
     pub fn universe(&self) -> Universe {
         self.universe.clone()
+    }
+
+    pub fn vel(&self) -> Vec<f32> {
+        self.vel.to_vec()
     }
 }
 
@@ -337,8 +348,10 @@ pub struct Universe {
 impl Universe {
     pub fn new() -> Universe {
         let blocks = vec![
-            Block::new(Vec3::new(-1., -1., -1.), Vec3::new(1., 1., 1.)),
-            Block::new(Vec3::new(-10., -2., -10.), Vec3::new(20., 1., 20.)),
+            Block::new(Vec3::new(-1., -1., -1.), Vec3::new(2., 1.5, 2.)),
+            Block::new(Vec3::new(-10., -2., -9.), Vec3::new(20., 1., 20.)),
+            Block::new(Vec3::new(0., 0., 0.), Vec3::new(2., 1.5, 2.)),
+            Block::new(Vec3::new(1.75, 0.5, 4.5), Vec3::new(0.5, 2.0, 0.5)),
         ];
 
         let mut surfaces: Vec<Surface> = Vec::new();
@@ -444,7 +457,6 @@ impl Universe {
             };
             for index in &mut new_indices {
                 *index += next_index;
-                log_u32(*index);
             }
             indices.append(&mut new_indices);
             next_index += index_add;
@@ -488,7 +500,29 @@ impl Universe {
             0.0,  1.0,  0.0,  1.0,    // Top face: green
             0.0,  0.0,  1.0,  1.0,    // Bottom face: blue
             1.0,  1.0,  0.0,  1.0,    // Right face: yellow
-            1.0,  0.0,  1.0,  1.0,    // Right face: yellow
+            1.0,  0.0,  1.0,  1.0,    // Left face: pink
+
+            0.5,  0.5,  0.5,  1.0,
+            0.5,  0.5,  0.5,  1.0,
+            0.5,  0.5,  0.5,  1.0,
+            0.5,  0.5,  0.5,  1.0,
+            0.5,  0.5,  0.5,  1.0,
+            0.5,  0.5,  0.5,  1.0,
+
+            1.0,  0.0,  1.0,  1.0,
+            1.0,  1.0,  1.0,  1.0,    // Front face: white
+            1.0,  0.0,  0.0,  1.0,    // Back face: red
+            0.0,  1.0,  0.0,  1.0,    // Top face: green
+            0.0,  0.0,  1.0,  1.0,    // Bottom face: blue
+            1.0,  1.0,  0.0,  1.0,    // Right face: yellow
+            
+                // Front face: white
+            1.0,  0.0,  0.0,  1.0,    // Back face: red
+            0.0,  1.0,  0.0,  1.0,    // Top face: green
+            0.0,  0.0,  1.0,  1.0,    // Bottom face: blue
+            1.0,  1.0,  0.0,  1.0,    // Right face: yellow
+            1.0,  0.0,  1.0,  1.0,
+            1.0,  1.0,  1.0,  1.0,
         ];
 
         /*let indices = vec![

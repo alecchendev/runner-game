@@ -23,7 +23,14 @@ let cameraAngle = {
 }
 
 const universe = player.universe();
-const positions = universe.positions();
+let positions = universe.positions();
+
+for (let i = 0; i < positions.length/* - 72*/; ++i) {
+  if (i % 3 == 2) {
+    positions[i] *= -1;
+  }
+}
+
 const faceColors = universe.colors();
 const indices = universe.indices();
 
@@ -106,6 +113,12 @@ function initBuffers(gl) {
 }
 
 function drawScene(gl, programInfo, buffers, deltaTime) {
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
+  
+  gl.bufferData(gl.ARRAY_BUFFER,
+                new Float32Array(positions),
+                gl.STATIC_DRAW);
+  
   gl.clearColor(0.012, 0.647, 0.988, 1.0);
   gl.clearDepth(1.0);
   gl.enable(gl.DEPTH_TEST);
@@ -323,9 +336,23 @@ function main() {
 
     player.update();
 
-    let pos = player.position();
-    let theta = player.theta();
-    let phi = player.phi();
+    //positions[0] += 0.1;
+    /*
+    for (let i = positions.length - 72; i < positions.length; ++i) {
+      if (i % 3 == 0) {
+        positions[i] += player.vel()[0];
+      }
+      if (i % 3 == 1) {
+        positions[i] += player.vel()[1];
+      }
+      if (i % 3 == 2) {
+        positions[i] -= player.vel()[2];
+      }
+    }*/
+
+    let pos = player.position();//[1.0, 4.0, -9.0];//
+    let theta = player.theta();//0.0;//
+    let phi = player.phi();//0.5; //
 
     cameraPosition = {
       x: pos[0],
