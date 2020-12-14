@@ -24,6 +24,40 @@ extern "C" {
     fn log(s: &str);
 }
 
+pub struct Grapple {
+    start: Vec3,
+    end: Vec3,
+    cast_dir: Vec3,
+    hooked: bool,
+    length: f32,
+    pull_acc: f32,
+    cast_spd: f32,
+}
+
+impl Grapple {
+    pub fn new(start: Vec3, end: Vec3) -> Self {
+        Self {
+            start,
+            end,
+            cast_dir: (end - start) / (end - start).length(),
+            hooked: false,
+            length: 20.,
+            pull_acc: 0.05,
+            cast_spd: 0.1,
+        }
+    }
+
+    pub fn cast(&mut self, blocks: &Vec<Block>) {
+        self.end = self.end + self.cast_dir * self.cast_spd;
+        for block in blocks {
+            if block.bounding_box.point_intersects(&self.end) {
+                self.hooked = true;
+                log("Hooked!");
+            }
+        }
+    }
+}
+
 #[wasm_bindgen]
 pub struct Player {
     position: Vec3,
@@ -47,6 +81,9 @@ pub struct Player {
     on_ground: bool,
 
     vel: Vec3,
+
+    grapple: Option<Grapple>,
+    pull_vel: Option<Vec3>,
 }
 
 #[wasm_bindgen]
@@ -80,17 +117,63 @@ impl Player {
             universe: Universe::new(),
             on_ground: false,
             vel: Vec3::new(0., 0., 0.),
+            grapple: None,
+            pull_vel: None,
+        }
+    }
+
+    pub fn cast_grapple(&mut self) {
+        match &mut self.grapple {
+            None => self.grapple = Some(Grapple::new(self.position.clone(), self.position.clone() + Vec3::new(self.theta.sin(), -self.phi.sin(), self.theta.cos()))),
+            Some(_) => self.grapple = None,
+        }
+        log("Created grapple!");
+        //log(&format!("{}", self.grapple.unwrap().cast_dir)[..]);
+    }
+
+    pub fn pull_grapple(&mut self) {
+        match &self.grapple {
+            None => (),
+            Some(grapple) => {
+                self.pull_vel = Some((grapple.end - self.position) / (grapple.end - self.position).length() * grapple.pull_acc);
+                log(&format!("{}", self.pull_vel.unwrap())[..]);
+            }
         }
     }
 
     pub fn update(&mut self) {
         self.move_velv += self.gravity;
 
+        // GRAPPLE
+        match &mut self.grapple {
+            None => self.pull_vel = None,
+            Some(grapple) => {
+                if grapple.hooked {
+                    match &self.pull_vel {
+                        None => (),
+                        Some(_) => self.pull_vel = Some((grapple.end - self.position) / (grapple.end - self.position).length() * grapple.pull_acc),
+                    };
+                } else {
+                    if (grapple.end - grapple.start).length() > grapple.length {
+                        self.grapple = None;
+                    } else {
+                        grapple.cast(&self.universe.blocks);
+                        log(&format!("{}", grapple.end)[..]);
+                    }
+                }
+            }
+        }
+
+
         let del_x = self.theta.sin() * self.move_velz + self.theta.cos() * self.move_velh;
         let del_z = self.theta.cos() * self.move_velz + -self.theta.sin() * self.move_velh;
         let del_y = self.move_velv;
 
         let mut vel = Vec3::new(del_x, del_y, del_z);
+        match &self.pull_vel {
+            None => (),
+            Some(pull_vel) => vel = vel + *pull_vel,
+        }
 
         for block in &self.universe.blocks {
             
@@ -258,6 +341,14 @@ impl BoundingBox {
                (a_min.y <= b_max.y) && (a_max.y >= b_min.y) &&
                (a_min.z <= b_max.z) && (a_max.z >= b_min.z);
     }
+
+    pub fn point_intersects(&self, point: &Vec3) -> bool {
+        let min = self.get_min();
+        let max = self.get_max();
+        (point.x >= min.x) && (point.x <= max.x) &&
+        (point.y >= min.y) && (point.y <= max.y) &&
+        (point.z >= min.z) && (point.z <= max.z)
+    }
 }
 
 #[wasm_bindgen]
@@ -352,6 +443,7 @@ impl Universe {
             Block::new(Vec3::new(-10., -2., -9.), Vec3::new(20., 1., 20.)),
             Block::new(Vec3::new(0., 0., 0.), Vec3::new(2., 1.5, 2.)),
             Block::new(Vec3::new(1.75, 0.5, 4.5), Vec3::new(0.5, 2.0, 0.5)),
+            Block::new(Vec3::new(4.5, 0.0, -1.5), Vec3::new(0.5, 3.0, 3.5)),
         ];
 
         let mut surfaces: Vec<Surface> = Vec::new();
@@ -523,6 +615,14 @@ impl Universe {
             1.0,  1.0,  0.0,  1.0,    // Right face: yellow
             1.0,  0.0,  1.0,  1.0,
             1.0,  1.0,  1.0,  1.0,
+
+               // Back face: red
+            0.0,  1.0,  0.0,  1.0,    // Top face: green
+            0.0,  0.0,  1.0,  1.0,    // Bottom face: blue
+            1.0,  1.0,  0.0,  1.0,    // Right face: yellow
+            1.0,  0.0,  1.0,  1.0,
+            1.0,  1.0,  1.0,  1.0,
+            1.0,  0.0,  0.0,  1.0, 
         ];
 
         /*let indices = vec![

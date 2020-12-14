@@ -273,8 +273,19 @@ function main() {
 
   let then = 0;
 
-  document.addEventListener("click", function () {
-    document.body.requestPointerLock();
+  document.addEventListener("click", function (event) {
+    if (document.pointerLockElement === document.body) {
+      //console.log("Moved by " + event.movementX + ", " + event.movementY);
+      if (event.button === 0) {
+        player.cast_grapple();
+      } else if (event.button === 2) {
+        //console.log("right click");
+        player.pull_grapple();
+      }
+      
+    } else {
+      document.body.requestPointerLock();
+    }
   });
 
   document.body.addEventListener("mousemove", function (event) {
