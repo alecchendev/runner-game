@@ -24,9 +24,9 @@ let cameraAngle = {
 }
 
 let graphics = universe.graphics();
-const positions = graphics.positions();
-const faceColors = graphics.colors();
-const indices = graphics.indices();
+let positions = graphics.positions();
+let faceColors = graphics.colors();
+let indices = graphics.indices();
 
 function initShaderProgram(gl, vsSource, fsSource) {
   const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
@@ -107,13 +107,14 @@ function initBuffers(gl) {
 }
 
 function drawScene(gl, programInfo, buffers, deltaTime) {
-  //
+  /*
   gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
   
   gl.bufferData(gl.ARRAY_BUFFER,
                 new Float32Array(positions),
                 gl.STATIC_DRAW);
-  //
+  */
+  buffers = initBuffers(gl);
   
   gl.clearColor(0.012, 0.647, 0.988, 1.0);
   gl.clearDepth(1.0);
@@ -272,18 +273,28 @@ function main() {
 
   let then = 0;
 
-  document.addEventListener("click", function (event) {
+  document.addEventListener("mousedown", function (event) {
     if (document.pointerLockElement === document.body) {
       //console.log("Moved by " + event.movementX + ", " + event.movementY);
       if (event.button === 0) {
-        player.cast_grapple();
+        universe.cast_grapple();
       } else if (event.button === 2) {
         //console.log("right click");
-        player.pull_grapple();
+        universe.pull_grapple();
       }
       
     } else {
       document.body.requestPointerLock();
+    }
+  });
+
+  document.addEventListener("mouseup", function (event) {
+    if (document.pointerLockElement === document.body) {
+      //console.log("Moved by " + event.movementX + ", " + event.movementY);
+      if (event.button === 2) {
+        //console.log("right click");
+        universe.release_grapple();
+      }
     }
   });
 
@@ -346,6 +357,9 @@ function main() {
 
     universe.update();
     graphics = universe.graphics();
+    positions = graphics.positions();
+    faceColors = graphics.colors();
+    indices = graphics.indices();
 
     let pos = graphics.cam_pos();//[1.0, 4.0, -9.0];//
     let theta = graphics.cam_theta();//0.0;//

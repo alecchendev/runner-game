@@ -5,6 +5,8 @@ use super::player::{Player, Go};
 use super::block::Block;
 use super::graphics::Graphics;
 
+use super::log;
+
 #[wasm_bindgen]
 pub struct Universe {
     players: Vec<Player>,
@@ -115,7 +117,43 @@ impl Universe {
             }
         }
 
+        // GRAPPLE VIS
+        /*
+        if let Some(grapple) = &self.players[0].grapple {
+            log("Visualizing grapple.");
+            let grapple_width = 0.1;
+            let start = self.players[0].position;
+            let end = grapple.end;
+            positions.append(&mut (start + Vec3::new(grapple_width, 0., 0.)).to_vec());
+            positions.append(&mut (start - Vec3::new(grapple_width, 0., 0.)).to_vec());
+            positions.append(&mut (end - Vec3::new(grapple_width, 0., 0.)).to_vec());
+            positions.append(&mut (end + Vec3::new(grapple_width, 0., 0.)).to_vec());
+            
+            let mut new_indices = vec![0, 1, 2, 0, 2, 3];
+            for new_index in &mut new_indices {
+                *new_index += index;
+            }
+            indices.append(&mut new_indices);
+            index += 4;
+
+            colors.append(&mut vec![1.0, 1.0, 1.0, 1.0]);
+        }
+        */
+        
+
         self.graphics.update(positions, colors, indices, self.players[0].position().to_vec(), self.players[0].theta(), self.players[0].phi());
+    }
+
+    pub fn cast_grapple(&mut self) {
+        self.players[0].cast_grapple();
+    }
+
+    pub fn pull_grapple(&mut self) {
+        self.players[0].pull_grapple();
+    }
+
+    pub fn release_grapple(&mut self) {
+        self.players[0].release_grapple();
     }
 
     pub fn go(&mut self, go: Go) {

@@ -29,9 +29,9 @@ impl Vec3 {
         (self.x.powi(2) + self.y.powi(2) + self.z.powi(2)).sqrt()
     }
 
-    /*pub fn unit(&self) -> Vec3 {
-        *self / self.length()
-    }*/
+    pub fn unit(&self) -> Vec3 {
+        self.clone() / self.length()
+    }
 
     pub fn to_vec(&self) -> Vec<f32> {
         vec![self.x, self.y, self.z]

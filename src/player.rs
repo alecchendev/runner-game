@@ -7,10 +7,11 @@ use super::log;
 
 pub struct Player {
     look_spd: f32,
+    move_acc: f32,
     move_spd: f32,
     jump_spd: f32,
 
-	position: Vec3,
+	pub position: Vec3,
 	velocity: Vec3,
 	h_vel: f32,
     d_vel: f32,
@@ -20,7 +21,7 @@ pub struct Player {
     dims: Vec3,
     on_ground: bool, // set to false each update, and set true if it is colliding with something below it
 
-    grapple: Option<Grapple>,
+    pub grapple: Option<Grapple>,
     pulling: bool,
 }
 
@@ -48,6 +49,7 @@ impl Player {
         log("Created Player!");
         Self {
             look_spd: 0.0008,
+            move_acc: 0.01,
             move_spd: 0.09,
             jump_spd: 0.25,
 
@@ -66,7 +68,48 @@ impl Player {
         }
     }
 
+    pub fn cast_grapple(&mut self) {
+        match &mut self.grapple {
+            None => {
+                self.grapple = Some(Grapple::new(self.position.clone(), self.position.clone() + Vec3::new(self.theta.sin(), -self.phi.sin(), self.theta.cos())));
+                log("Created grapple!");
+            },
+            Some(_) => {
+                self.grapple = None;
+                log("Destroyed grapple!");
+            },
+        }
+    }
+
+    pub fn pull_grapple(&mut self) {
+        self.pulling = true;
+        log("Pulling grapple!");
+    }
+
+    pub fn release_grapple(&mut self) {
+        self.pulling = false;
+        log("Released grapple!");
+    }
+
     pub fn update(&mut self, blocks: &Vec<Block>, gravity: f32) {
+
+        match &mut self.grapple {
+            None => self.pulling = false,
+            Some(grapple) => {
+                if grapple.hooked {
+                    if self.pulling {
+                        
+                    }
+                } else {
+                    if (grapple.end - self.position).length() > grapple.length {
+                        self.grapple = None;
+                    } else {
+                        grapple.cast(blocks);
+                        log(&format!("{}", grapple.end)[..]);
+                    }
+                }
+            }
+        }
 
         self.on_ground = false;
 
