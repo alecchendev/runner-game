@@ -33,6 +33,14 @@ impl Vec3 {
         self.clone() / self.length()
     }
 
+    pub fn dot(&self, other: &Vec3) -> f32 {
+        self.x * other.x + self.y * other.y + self.z * other.z
+    }
+
+    pub fn project_onto(&self, other: &Vec3) -> Vec3 {
+        other.clone() * (self.dot(other) / other.length().powi(2))
+    }
+
     pub fn to_vec(&self) -> Vec<f32> {
         vec![self.x, self.y, self.z]
     }
@@ -56,11 +64,31 @@ impl std::ops::Add for Vec3 {
     }
 }
 
+impl std::ops::AddAssign for Vec3 {
+    fn add_assign(&mut self, other: Self) {
+        *self = Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+            z: self.z + other.z,
+        }
+    }
+}
+
 impl std::ops::Sub for Vec3 {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self {
         Self {
+            x: self.x - other.x,
+            y: self.y - other.y,
+            z: self.z - other.z,
+        }
+    }
+}
+
+impl std::ops::SubAssign for Vec3 {
+    fn sub_assign(&mut self, other: Self) {
+        *self = Self {
             x: self.x - other.x,
             y: self.y - other.y,
             z: self.z - other.z,

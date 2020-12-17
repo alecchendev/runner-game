@@ -8,6 +8,7 @@ use super::log;
 pub struct Player {
     look_spd: f32,
     move_acc: f32,
+    move_dec: f32,
     move_spd: f32,
     jump_spd: f32,
 
@@ -49,7 +50,8 @@ impl Player {
         log("Created Player!");
         Self {
             look_spd: 0.0008,
-            move_acc: 0.01,
+            move_acc: 0.045,
+            move_dec: 0.045,
             move_spd: 0.09,
             jump_spd: 0.25,
 
@@ -113,13 +115,46 @@ impl Player {
 
         self.on_ground = false;
 
-        let del_x = self.theta.sin() * self.d_vel + self.theta.cos() * self.h_vel;
+        let h_dir = Vec3::new(self.theta.cos(), 0., -self.theta.sin());
+        let d_dir = Vec3::new(self.theta.sin(), 0., self.theta.cos());
+        let h_vel = self.velocity.project_onto(&h_dir);
+        let d_vel = self.velocity.project_onto(&d_dir);
+
+        let mut movement = Vec3::new(0., 0., 0.);
+        if (h_vel + h_dir * self.h_vel).length() < self.move_spd {
+            movement += h_dir * self.h_vel;
+        } else if self.h_vel != 0. {
+            movement += (h_dir * self.move_spd * self.h_vel.signum()) - h_vel;
+        }
+        if (d_vel + d_dir * self.d_vel).length() < self.move_spd {
+            movement += d_dir * self.d_vel;
+        } else if self.d_vel != 0. {
+            movement += (d_dir * self.move_spd * self.d_vel.signum()) - d_vel;
+        }
+        if h_vel.length() > 0. && self.h_vel == 0. {
+            if h_vel.length() <= self.move_dec {
+                movement -= h_vel;
+            } else {
+                movement -= h_dir * h_vel.dot(&h_dir).signum() * self.move_dec;
+            }
+        }
+        if d_vel.length() > 0. && self.d_vel == 0. {
+            if d_vel.length() <= self.move_dec {
+                movement -= d_vel;
+            } else {
+                movement -= d_dir * d_vel.dot(&d_dir).signum() * self.move_dec;
+            }
+        }
+
+        self.velocity += movement + Vec3::new(0., gravity, 0.);
+
+        /*let del_x = self.theta.sin() * self.d_vel + self.theta.cos() * self.h_vel;
         let del_z = self.theta.cos() * self.d_vel + -self.theta.sin() * self.h_vel;
         let del_y = self.velocity.y + gravity;
 
         self.velocity.x = del_x;
         self.velocity.y = del_y;
-        self.velocity.z = del_z;
+        self.velocity.z = del_z;*/
 
         for block in blocks {
 
@@ -144,10 +179,10 @@ impl Player {
 
     pub fn go(&mut self, go: Go) {
         match go {
-            Go::Left => self.h_vel = -self.move_spd,
-            Go::Forward => self.d_vel = self.move_spd,
-            Go::Right => self.h_vel = self.move_spd,
-            Go::Back => self.d_vel = -self.move_spd,
+            Go::Left => self.h_vel = -self.move_acc,
+            Go::Forward => self.d_vel = self.move_acc,
+            Go::Right => self.h_vel = self.move_acc,
+            Go::Back => self.d_vel = -self.move_acc,
             Go::Jump => if self.on_ground { self.velocity.y = self.jump_spd; self.on_ground = false; } else { },
         }
     }
@@ -155,22 +190,22 @@ impl Player {
     pub fn stop(&mut self, go: Go) {
         match go {
             Go::Left => {
-                if self.h_vel == -self.move_spd {
+                if self.h_vel == -self.move_acc {
                     self.h_vel = 0.;
                 }
             },
             Go::Forward => {
-                if self.d_vel == self.move_spd {
+                if self.d_vel == self.move_acc {
                     self.d_vel = 0.;
                 }
             },
             Go::Right => {
-                if self.h_vel == self.move_spd {
+                if self.h_vel == self.move_acc {
                     self.h_vel = 0.;
                 }
             },
             Go::Back => {
-                if self.d_vel == -self.move_spd {
+                if self.d_vel == -self.move_acc {
                     self.d_vel = 0.;
                 }
             },
