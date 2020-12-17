@@ -13,33 +13,19 @@ pub struct Universe {
 impl Universe {
     pub fn new() -> Self {
         Self {
-
+            players: vec![Player::new()],
+            gravity: -0.015,
+            blocks: vec![],
+            graphics: Graphics::new(),
         }
     }
 
     pub fn update(&mut self) {
-        self.player.update(&self.blocks);
+        self.player.update(&self.blocks, self.gravity);
         self.graphics.update(&self.blocks);
     }
-}
 
-pub struct Graphics {
-    positions: Vec<f32>,
-    colors: Vec<f32>,
-    indices: Vec<f32>,
-}
-
-impl Graphics {
-    pub fn update(&mut self, blocks: &Vec<Block>) {
-        // update positions, colors, indices
-    }
-    pub fn positions(&self) -> Vec<f32> {
-
-    }
-    pub fn colors(&self) -> Vec<f32> {
-        
-    }
-    pub fn indices(&self) -> Vec<f32> {
-        
+    pub fn graphics(&self) -> Graphics {
+        self.graphics.clone()
     }
 }
