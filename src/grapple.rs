@@ -1,4 +1,4 @@
-
+use super::utils::Vec3;
 
 pub struct Grapple {
     end: Vec3,

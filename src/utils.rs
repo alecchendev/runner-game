@@ -93,7 +93,7 @@ impl std::ops::Div<f32> for Vec3 {
 }
 
 // collision trait
-trait AABB {
+pub trait AABB {
     fn min(&self) -> Vec3;
     
     fn max(&self) -> Vec3;

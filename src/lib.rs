@@ -1,5 +1,13 @@
 mod utils;
-use utils::Vec3;
+
+mod player;
+
+mod universe;
+use universe::Universe;
+
+mod grapple;
+mod block;
+mod graphics;
 
 use std::cmp::min;
 
@@ -18,12 +26,13 @@ extern "C" {
     // Use `js_namespace` here to bind `console.log(..)` instead of just
     // `log(..)`
     #[wasm_bindgen(js_namespace = console, js_name = log)]
-    fn log_u32(a: u32);
+    pub fn log_u32(a: u32);
 
     #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
+    pub fn log(s: &str);
 }
 
+/*
 pub struct Grapple {
     start: Vec3,
     end: Vec3,
@@ -656,3 +665,4 @@ impl Universe {
     }
 
 }
+*/

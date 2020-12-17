@@ -1,3 +1,10 @@
+use wasm_bindgen::prelude::*;
+use super::utils::Vec3;
+use super::grapple::Grapple;
+use super::block::Block;
+use super::utils::AABB;
+use super::log;
+
 pub struct Player {
     look_spd: f32,
     move_spd: f32,
@@ -10,8 +17,8 @@ pub struct Player {
     theta: f32,
     phi: f32,
     
-    dims: Vec3
-    on_ground: f32, // set to false each update, and set true if it is colliding with something below it
+    dims: Vec3,
+    on_ground: bool, // set to false each update, and set true if it is colliding with something below it
 
     grapple: Option<Grapple>,
     pulling: bool,
@@ -36,7 +43,6 @@ pub enum Go {
     Jump = 4,
 }
 
-#[wasm_bindgen]
 impl Player {
     pub fn new() -> Self {
         log("Created Player!");
@@ -60,20 +66,20 @@ impl Player {
         }
     }
 
-    pub fn update(&mut self, gravity: f32) {
+    pub fn update(&mut self, blocks: &Vec<Block>, gravity: f32) {
 
-        let del_x = self.theta.sin() * self.move_velz + self.theta.cos() * self.move_velh;
-        let del_z = self.theta.cos() * self.move_velz + -self.theta.sin() * self.move_velh;
+        let del_x = self.theta.sin() * self.d_vel + self.theta.cos() * self.h_vel;
+        let del_z = self.theta.cos() * self.d_vel + -self.theta.sin() * self.h_vel;
         let del_y = self.velocity.y + gravity;
 
-        self.velocity.x = delx;
+        self.velocity.x = del_x;
         self.velocity.y = del_y;
         self.velocity.z = del_z;
 
-        for block in &self.universe.blocks {
+        for block in blocks {
 
             let collision_dir = self.collision(block, &self.velocity);
-            self.velocity += Vec3::new(collision_dir.x * self.velocity.x, collision_dir.y * self.velocity.y, collision_dir.z * self.velocity.z);
+            self.velocity = self.velocity + Vec3::new(collision_dir.x * self.velocity.x, collision_dir.y * self.velocity.y, collision_dir.z * self.velocity.z);
 
             if collision_dir.y.abs() == 1. {
                 self.on_ground = true;
@@ -90,7 +96,7 @@ impl Player {
             Go::Forward => self.d_vel = self.move_spd,
             Go::Right => self.h_vel = self.move_spd,
             Go::Back => self.d_vel = -self.move_spd,
-            Go::Jump => if self.on_ground { self.velocity.y = self.jump_speed; self.on_ground = false; } else { },
+            Go::Jump => if self.on_ground { self.velocity.y = self.jump_spd; self.on_ground = false; } else { },
         }
     }
 

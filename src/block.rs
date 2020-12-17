@@ -1,15 +1,16 @@
+use super::utils::Vec3;
+use super::utils::AABB;
+
 pub struct Block {
-    origin: Vec3,
-    dims: Vec3,
+    pub origin: Vec3,
+    pub dims: Vec3,
 }
 
 impl Block {
     pub fn new(origin: Vec3, dims: Vec3) -> Self {
-        let bounding_box = BoundingBox::new(origin, dims);
         Self {
             origin,
             dims,
-            bounding_box,
         }
     }
 }
