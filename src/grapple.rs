@@ -10,7 +10,7 @@ pub struct Grapple {
     pub hooked: bool,
     pub length: f32,
     
-    pull: f32, // magnitude of force
+    pub pull: f32, // magnitude of force
 }
 
 impl Grapple {
@@ -22,7 +22,7 @@ impl Grapple {
             hooked: false,
             length: 10.,
             
-            pull: 0.075,
+            pull: 0.07,
         }
     }
 

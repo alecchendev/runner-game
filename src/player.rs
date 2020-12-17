@@ -100,7 +100,7 @@ impl Player {
             Some(grapple) => {
                 if grapple.hooked {
                     if self.pulling {
-                        
+                        self.velocity += (grapple.end - self.position).unit() * grapple.pull;
                     }
                 } else {
                     if (grapple.end - self.position).length() > grapple.length {
