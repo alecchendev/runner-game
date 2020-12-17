@@ -8,6 +8,7 @@ use universe::Universe;
 mod grapple;
 mod block;
 mod graphics;
+use graphics::Graphics;
 
 use std::cmp::min;
 

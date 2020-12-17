@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 use super::utils::Vec3;
-use super::player::Player;
+use super::player::{Player, Go};
 
 use super::block::Block;
 use super::graphics::Graphics;
@@ -109,14 +109,25 @@ impl Universe {
             1.0,  0.0,  1.0,  1.0,
             0.0,  1.0,  1.0,  1.0,
         ];
-        let mut block_colors = vec![];
         for block in 0..(self.blocks.len() - 1) {
             for index in 0..color_pattern.len() {
                 colors.push(color_pattern[(block * 4 + index) % color_pattern.len()]);
             }
         }
 
-        self.graphics.update(positions, colors, indices);
+        self.graphics.update(positions, colors, indices, self.players[0].position().to_vec(), self.players[0].theta(), self.players[0].phi());
+    }
+
+    pub fn go(&mut self, go: Go) {
+        self.players[0].go(go);
+    }
+
+    pub fn stop(&mut self, go: Go) {
+        self.players[0].stop(go);
+    }
+
+    pub fn mouse_look(&mut self, movement_x: f32, movement_y: f32) {
+        self.players[0].mouse_look(movement_x, movement_y);
     }
 
     pub fn graphics(&self) -> Graphics {

@@ -48,7 +48,7 @@ impl Player {
         log("Created Player!");
         Self {
             look_spd: 0.0008,
-            move_spd: 0.1,
+            move_spd: 0.09,
             jump_spd: 0.25,
 
             position: Vec3::new(2., 1.5, -5.),
@@ -68,6 +68,8 @@ impl Player {
 
     pub fn update(&mut self, blocks: &Vec<Block>, gravity: f32) {
 
+        self.on_ground = false;
+
         let del_x = self.theta.sin() * self.d_vel + self.theta.cos() * self.h_vel;
         let del_z = self.theta.cos() * self.d_vel + -self.theta.sin() * self.h_vel;
         let del_y = self.velocity.y + gravity;
@@ -81,8 +83,15 @@ impl Player {
             let collision_dir = self.collision(block, &self.velocity);
             self.velocity = self.velocity + Vec3::new(collision_dir.x * self.velocity.x, collision_dir.y * self.velocity.y, collision_dir.z * self.velocity.z);
 
+            if collision_dir.x.abs() != 0. {
+                self.velocity.x = 0.;
+            }
             if collision_dir.y.abs() == 1. {
+                self.velocity.y = 0.;
                 self.on_ground = true;
+            }
+            if collision_dir.z.abs() != 0. {
+                self.velocity.z = 0.;
             }
 
         }

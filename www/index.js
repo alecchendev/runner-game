@@ -1,7 +1,7 @@
 /*import('runner-game')
   .catch(console.error);
 //*/
-import { Universe, Cell, Player } from "runner-game";
+import { Universe } from "runner-game";
 import { memory } from "runner-game/runner_game_bg";
 const { mat4, mat3, vec3 } = glMatrix;
 
@@ -10,7 +10,8 @@ const GRID_COLOR = "#CCCCCC";
 const DEAD_COLOR = "#FFFFFF";
 const ALIVE_COLOR = "#000000";
 
-const player = Player.new();
+const universe = Universe.new();
+universe.update();
 
 let cameraPosition = {
   x: 0,
@@ -22,17 +23,10 @@ let cameraAngle = {
   phi: 0,
 }
 
-const universe = player.universe();
-let positions = universe.positions();
-
-for (let i = 0; i < positions.length/* - 72*/; ++i) {
-  if (i % 3 == 2) {
-    positions[i] *= -1;
-  }
-}
-
-const faceColors = universe.colors();
-const indices = universe.indices();
+let graphics = universe.graphics();
+const positions = graphics.positions();
+const faceColors = graphics.colors();
+const indices = graphics.indices();
 
 function initShaderProgram(gl, vsSource, fsSource) {
   const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
@@ -113,11 +107,13 @@ function initBuffers(gl) {
 }
 
 function drawScene(gl, programInfo, buffers, deltaTime) {
+  //
   gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
   
   gl.bufferData(gl.ARRAY_BUFFER,
                 new Float32Array(positions),
                 gl.STATIC_DRAW);
+  //
   
   gl.clearColor(0.012, 0.647, 0.988, 1.0);
   gl.clearDepth(1.0);
@@ -147,9 +143,12 @@ function drawScene(gl, programInfo, buffers, deltaTime) {
     modelViewMatrix,
     cameraAngle.theta,
     [0, 1, 0]);
+  mat4.scale(modelViewMatrix,
+    modelViewMatrix,
+    [1, 1, -1]);
   mat4.translate(modelViewMatrix,
     modelViewMatrix,
-    [-cameraPosition.x, -cameraPosition.y, cameraPosition.z]);
+    [-cameraPosition.x, -cameraPosition.y, -cameraPosition.z]);
   {
     const numComponents = 3;  // pull out 2 values per iteration - 2d..?
     const type = gl.FLOAT;    // the data in the buffer is 32bit floats
@@ -291,7 +290,7 @@ function main() {
   document.body.addEventListener("mousemove", function (event) {
     if (document.pointerLockElement === document.body) {
       //console.log("Moved by " + event.movementX + ", " + event.movementY);
-      player.mouse_look(event.movementX, event.movementY);
+      universe.mouse_look(event.movementX, event.movementY);
     }
     
   });
@@ -322,7 +321,7 @@ function main() {
     }
 
     if (event.key in MOVE) {
-      player.go(MOVE[event.key]);
+      universe.go(MOVE[event.key]);
     }
 
     event.preventDefault();
@@ -334,7 +333,7 @@ function main() {
     }
 
     if (event.key in MOVE) {
-      player.stop(MOVE[event.key]);
+      universe.stop(MOVE[event.key]);
     }
 
     event.preventDefault();
@@ -345,25 +344,12 @@ function main() {
     const deltaTime = now - then;
     then = now;
 
-    player.update();
+    universe.update();
+    graphics = universe.graphics();
 
-    //positions[0] += 0.1;
-    /*
-    for (let i = positions.length - 72; i < positions.length; ++i) {
-      if (i % 3 == 0) {
-        positions[i] += player.vel()[0];
-      }
-      if (i % 3 == 1) {
-        positions[i] += player.vel()[1];
-      }
-      if (i % 3 == 2) {
-        positions[i] -= player.vel()[2];
-      }
-    }*/
-
-    let pos = player.position();//[1.0, 4.0, -9.0];//
-    let theta = player.theta();//0.0;//
-    let phi = player.phi();//0.5; //
+    let pos = graphics.cam_pos();//[1.0, 4.0, -9.0];//
+    let theta = graphics.cam_theta();//0.0;//
+    let phi = graphics.cam_phi();//0.5; //
 
     cameraPosition = {
       x: pos[0],
