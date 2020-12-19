@@ -107,7 +107,6 @@ impl Player {
                         self.grapple = None;
                     } else {
                         grapple.cast(blocks);
-                        log(&format!("{}", grapple.end)[..]);
                     }
                 }
             }

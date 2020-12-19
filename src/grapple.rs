@@ -20,7 +20,7 @@ impl Grapple {
             cast_vel: (end - start).unit() * 0.2,
 
             hooked: false,
-            length: 10.,
+            length: 20.,
             
             pull: 0.07,
         }

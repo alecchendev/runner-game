@@ -125,7 +125,7 @@ function drawScene(gl, programInfo, buffers, deltaTime) {
 
   const fieldOfView = 45 * Math.PI / 180;
   const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-  const zNear = 0.1;
+  const zNear = 0.025;
   const zFar = 100.0;
 
   const projectionMatrix = mat4.create();
