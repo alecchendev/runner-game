@@ -17,7 +17,7 @@ impl Grapple {
     pub fn new(start: Vec3, end: Vec3) -> Self {
         Self {
             end,
-            cast_vel: (end - start).unit() * 0.2,
+            cast_vel: (end - start).unit() * 0.4,
 
             hooked: false,
             length: 20.,

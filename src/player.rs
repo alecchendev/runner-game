@@ -99,27 +99,6 @@ impl Player {
 
     pub fn update(&mut self, blocks: &Vec<Block>, gravity: f32) {
 
-        // GRAPPLE
-
-        match &mut self.grapple {
-            None => self.pulling = false,
-            Some(grapple) => {
-                if grapple.hooked {
-                    if self.pulling {
-                        self.velocity += (grapple.end - self.position).unit() * grapple.pull;
-                    }
-                } else {
-                    if (grapple.end - self.position).length() > grapple.length {
-                        self.grapple = None;
-                    } else {
-                        grapple.cast(blocks);
-                    }
-                }
-            }
-        }
-
-        
-
         // FRICTION AND AIR RES
 
         let hd_vel = Vec3::new(self.velocity.x, 0., self.velocity.z);
@@ -144,14 +123,12 @@ impl Player {
 
         // USER MOVEMENT
 
+        let hd_vel = Vec3::new(self.velocity.x, 0., self.velocity.z);
         let h_dir = Vec3::new(self.theta.cos(), 0., -self.theta.sin());
         let d_dir = Vec3::new(self.theta.sin(), 0., self.theta.cos());
 
         let move_dir = (h_dir * self.h_vel + d_dir * self.d_vel).unit();
-
         let move_acc = move_dir * self.move_acc;
-
-        let hd_vel = Vec3::new(self.velocity.x, 0., self.velocity.z);
 
         if hd_vel.length() <= self.move_spd + 0.001 { // ApproxEq
             if (hd_vel + move_acc).length() >= self.move_spd {
@@ -162,7 +139,32 @@ impl Player {
             }
         }
 
+        // GRAVITY
+
         self.velocity += Vec3::new(0., gravity, 0.);
+
+        // GRAPPLE
+
+        match &mut self.grapple {
+            None => self.pulling = false,
+            Some(grapple) => {
+                let grapple_dir = (grapple.end - self.position).unit();
+                if self.velocity.dot(&grapple_dir) < 0. {
+                    self.velocity = self.velocity - self.velocity.project_onto(&grapple_dir); // project onto the plane of the normal
+                }
+                if grapple.hooked {
+                    if self.pulling {
+                        self.velocity += grapple_dir * grapple.pull;
+                    }
+                } else {
+                    if (grapple.end - self.position).length() > grapple.length {
+                        self.grapple = None;
+                    } else {
+                        grapple.cast(blocks);
+                    }
+                }
+            }
+        }
 
         // COLLISIONS
 
