@@ -121,10 +121,9 @@ impl Universe {
         for player in &self.players {
             if let Some(grapple) = &self.players[0].grapple {
                 let grapple_width = 0.005;
-                let y_offset = 0.05;
                 let h_dir = Vec3::new(player.theta().cos(), 0., -player.theta().sin());
                 let y_dir = Vec3::new(player.theta().sin(), 0., player.theta().cos());
-                let start = self.players[0].position - Vec3::new(0., y_offset, 0.);
+                let start = self.players[0].position;
                 let end = grapple.end;
                 
                 positions.append(&mut (start + h_dir * grapple_width).to_vec());
@@ -143,7 +142,9 @@ impl Universe {
             }
         }
         
-        self.graphics.update(positions, colors, indices, self.players[0].position().to_vec(), self.players[0].theta(), self.players[0].phi());
+        let cam_pos = self.players[0].position + Vec3::new(0., self.players[0].dims.y / 8., 0.);
+
+        self.graphics.update(positions, colors, indices, cam_pos.to_vec(), self.players[0].theta(), -self.players[0].phi());
     }
 
     pub fn cast_grapple(&mut self) {

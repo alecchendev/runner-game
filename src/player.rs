@@ -21,7 +21,7 @@ pub struct Player {
     theta: f32,
     phi: f32,
     
-    dims: Vec3,
+    pub dims: Vec3,
     on_ground: bool, // set to false each update, and set true if it is colliding with something below it
 
     pub grapple: Option<Grapple>,
@@ -77,7 +77,8 @@ impl Player {
     pub fn cast_grapple(&mut self) {
         match &mut self.grapple {
             None => {
-                self.grapple = Some(Grapple::new(self.position.clone(), self.position.clone() + Vec3::new(self.theta.sin(), -self.phi.sin(), self.theta.cos())));
+                let cast_dir = Vec3::new(self.theta.sin() * self.phi.cos(), self.phi.sin(), self.theta.cos() * self.phi.cos());
+                self.grapple = Some(Grapple::new(self.position.clone(), self.position.clone() + cast_dir));
                 log("Created grapple!");
             },
             Some(_) => {
@@ -148,11 +149,11 @@ impl Player {
         match &mut self.grapple {
             None => self.pulling = false,
             Some(grapple) => {
-                let grapple_dir = (grapple.end - self.position).unit();
-                if self.velocity.dot(&grapple_dir) < 0. {
-                    self.velocity = self.velocity - self.velocity.project_onto(&grapple_dir); // project onto the plane of the normal
-                }
                 if grapple.hooked {
+                    let grapple_dir = (grapple.end - self.position).unit();
+                    if self.velocity.dot(&grapple_dir) < 0. {
+                        self.velocity = self.velocity - self.velocity.project_onto(&grapple_dir); // project onto the plane of the normal
+                    }
                     if self.pulling {
                         self.velocity += grapple_dir * grapple.pull;
                     }
@@ -233,6 +234,8 @@ impl Player {
     }
 
     pub fn mouse_look(&mut self, movement_x: f32, movement_y: f32) {
+        let movement_y = -movement_y;
+        log(&format!("{}", movement_y)[..]);
         let del_theta = movement_x * self.look_spd;
         let del_phi = movement_y * self.look_spd;
         self.theta += del_theta;
@@ -243,6 +246,7 @@ impl Player {
                 self.phi
             }
         };
+        log(&format!("{}", self.phi)[..]);
     }
 
     pub fn position(&self) -> Vec<f32> {
