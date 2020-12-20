@@ -30,7 +30,7 @@ impl Universe {
         ];
         Self {
             players: vec![Player::new()],
-            gravity: -0.012,
+            gravity: -0.01,
             blocks,
             graphics: Graphics::new(),
         }

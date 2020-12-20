@@ -8,8 +8,10 @@ use super::log;
 pub struct Player {
     look_spd: f32,
     move_acc: f32,
-    move_dec: f32,
+    friction: f32,
+    air_res: f32,
     move_spd: f32,
+    term_spd: f32,
     jump_spd: f32,
 
 	pub position: Vec3,
@@ -50,10 +52,12 @@ impl Player {
         log("Created Player!");
         Self {
             look_spd: 0.0008,
-            move_acc: 0.045,
-            move_dec: 0.045,
-            move_spd: 0.09,
-            jump_spd: 0.25,
+            move_acc: 0.04,
+            friction: 0.02,
+            air_res: 0.0025,
+            move_spd: 0.08,
+            term_spd: 0.5,
+            jump_spd: 0.2,
 
             position: Vec3::new(2., 1.5, -5.),
             velocity: Vec3::new(0., 0., 0.),
@@ -112,13 +116,58 @@ impl Player {
             }
         }
 
-        self.on_ground = false;
+        
+
+        // FRICTION AND AIR RES
+
+        let hd_vel = Vec3::new(self.velocity.x, 0., self.velocity.z);
+
+        if hd_vel.length() > 0. {
+            if self.on_ground {
+                if hd_vel.length() <= self.friction {
+                    self.velocity.x = 0.;
+                    self.velocity.z = 0.;
+                } else {
+                    self.velocity -= hd_vel.unit() * self.friction;
+                }
+            } else {
+                if hd_vel.length() <= self.air_res {
+                    self.velocity.x = 0.;
+                    self.velocity.z = 0.;
+                } else {
+                    self.velocity -= hd_vel.unit() * self.air_res;
+                }
+            }
+        }
+
+        // MOVEMNT
 
         let h_dir = Vec3::new(self.theta.cos(), 0., -self.theta.sin());
         let d_dir = Vec3::new(self.theta.sin(), 0., self.theta.cos());
-        let h_vel = self.velocity.project_onto(&h_dir);
-        let d_vel = self.velocity.project_onto(&d_dir);
+        //let h_vel = self.velocity.project_onto(&h_dir);
+        //let d_vel = self.velocity.project_onto(&d_dir);
 
+        let move_dir = (h_dir * self.h_vel + d_dir * self.d_vel).unit();
+
+        let move_acc = move_dir * self.move_acc;
+
+        let hd_vel = Vec3::new(self.velocity.x, 0., self.velocity.z);
+
+        if hd_vel.length() <= self.move_spd + 0.001 { // ApproxEq
+            if (hd_vel + move_acc).length() >= self.move_spd {
+                self.velocity.x = ((hd_vel + move_acc).unit() * self.move_spd).x;
+                self.velocity.z = ((hd_vel + move_acc).unit() * self.move_spd).z;
+            } else {
+                self.velocity += move_acc;
+            }
+        }
+
+        self.velocity += Vec3::new(0., gravity, 0.);
+
+
+        // OLD MOVEMENT
+
+        /*
         let mut movement = Vec3::new(0., 0., 0.);
         if (h_vel + h_dir * self.h_vel).length() < self.move_spd {
             movement += h_dir * self.h_vel;
@@ -130,35 +179,34 @@ impl Player {
         } else if self.d_vel != 0. {
             movement += (d_dir * self.move_spd * self.d_vel.signum()) - d_vel;
         }
+        */
+
+        // RESISTANCE AND FRICTION
+        
+        /*
         if h_vel.length() > 0. && self.h_vel == 0. {
-            if h_vel.length() <= self.move_dec {
+            if h_vel.length() <= self.friction {
                 movement -= h_vel;
             } else {
-                movement -= h_dir * h_vel.dot(&h_dir).signum() * self.move_dec;
+                movement -= h_dir * h_vel.dot(&h_dir).signum() * self.friction;
             }
         }
         if d_vel.length() > 0. && self.d_vel == 0. {
-            if d_vel.length() <= self.move_dec {
+            if d_vel.length() <= self.friction {
                 movement -= d_vel;
             } else {
-                movement -= d_dir * d_vel.dot(&d_dir).signum() * self.move_dec;
+                movement -= d_dir * d_vel.dot(&d_dir).signum() * self.friction;
             }
-        }
+        }*/
 
-        self.velocity += movement + Vec3::new(0., gravity, 0.);
-
-        /*let del_x = self.theta.sin() * self.d_vel + self.theta.cos() * self.h_vel;
-        let del_z = self.theta.cos() * self.d_vel + -self.theta.sin() * self.h_vel;
-        let del_y = self.velocity.y + gravity;
-
-        self.velocity.x = del_x;
-        self.velocity.y = del_y;
-        self.velocity.z = del_z;*/
+        
+        //self.velocity += movement + Vec3::new(0., gravity, 0.);
+        self.on_ground = false;
 
         for block in blocks {
 
             let collision_dir = self.collision(block, &self.velocity);
-            self.velocity = self.velocity + Vec3::new(collision_dir.x * self.velocity.x, collision_dir.y * self.velocity.y, collision_dir.z * self.velocity.z);
+            //self.velocity = self.velocity + Vec3::new(collision_dir.x * self.velocity.x, collision_dir.y * self.velocity.y, collision_dir.z * self.velocity.z);
 
             if collision_dir.x.abs() != 0. {
                 self.velocity.x = 0.;
@@ -173,6 +221,9 @@ impl Player {
 
         }
 
+        if self.velocity.length() > self.term_spd {
+            self.velocity = self.velocity.unit() * self.term_spd;
+        }
         self.position = self.position + self.velocity;
     }
 

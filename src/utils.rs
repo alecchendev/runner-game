@@ -30,6 +30,9 @@ impl Vec3 {
     }
 
     pub fn unit(&self) -> Vec3 {
+        if self.length() == 0. {
+            return self.clone()
+        }
         self.clone() / self.length()
     }
 
@@ -38,6 +41,9 @@ impl Vec3 {
     }
 
     pub fn project_onto(&self, other: &Vec3) -> Vec3 {
+        if other.length() == 0. {
+            return other.clone()
+        }
         other.clone() * (self.dot(other) / other.length().powi(2))
     }
 

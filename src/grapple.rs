@@ -22,7 +22,7 @@ impl Grapple {
             hooked: false,
             length: 20.,
             
-            pull: 0.07,
+            pull: 0.05,
         }
     }
 
