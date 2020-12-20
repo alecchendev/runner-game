@@ -8,6 +8,22 @@ use super::graphics::Graphics;
 use super::log;
 
 #[wasm_bindgen]
+pub enum Input {
+    GoLeft = 0,
+    GoForward = 1,
+    GoRight = 2,
+    GoBack = 3,
+    StopLeft = 4,
+    StopForward = 5,
+    StopRight = 6,
+    StopBack = 7,
+    Jump = 8,
+    Cast = 9,
+    Pull = 10,
+    Release = 11,
+}
+
+#[wasm_bindgen]
 pub struct Universe {
     players: Vec<Player>,
     
@@ -29,67 +45,29 @@ impl Universe {
             Block::new(Vec3::new(4.5, 0.0, -1.5), Vec3::new(0.5, 3.0, 3.5)),
         ];
         Self {
-            players: vec![Player::new()],
+            players: vec![Player::new(), Player::new()],
             gravity: -0.01,
             blocks,
             graphics: Graphics::new(),
         }
     }
 
-    pub fn update(&mut self) {
-        self.players[0].update(&self.blocks, self.gravity);
-        self.update_graphics();
+    pub fn update(&mut self, curr_player: usize) {
+        for player in &mut self.players {
+            player.update(&self.blocks, self.gravity);
+        }
+        self.update_graphics(curr_player);
     }
 
-    fn update_graphics(&mut self) {
+    fn update_graphics(&mut self, curr_player: usize) {
         let mut positions = vec![];
         let mut colors = vec![];
         let mut indices = vec![];
 
         let mut index = 0;
         for block in &self.blocks {
-            let vertices: Vec<Vec3> = vec![
-                block.origin,
-                block.origin + Vec3::new(block.dims.x, 0., 0.),
-                block.origin + Vec3::new(block.dims.x, block.dims.y, 0.),
-                block.origin + Vec3::new(0., block.dims.y, 0.),
-
-                block.origin,
-                block.origin + Vec3::new(block.dims.x, 0., 0.),
-                block.origin + Vec3::new(block.dims.x, 0., block.dims.z),
-                block.origin + Vec3::new(0., 0., block.dims.z),
-
-                block.origin,
-                block.origin + Vec3::new(0., 0., block.dims.z),
-                block.origin + Vec3::new(0., block.dims.y, block.dims.z),
-                block.origin + Vec3::new(0., block.dims.y, 0.),
-
-                block.origin + block.dims,
-                block.origin + block.dims - Vec3::new(block.dims.x, 0., 0.),
-                block.origin + block.dims - Vec3::new(block.dims.x, block.dims.y, 0.),
-                block.origin + block.dims - Vec3::new(0., block.dims.y, 0.),
-
-                block.origin + block.dims,
-                block.origin + block.dims - Vec3::new(block.dims.x, 0., 0.),
-                block.origin + block.dims - Vec3::new(block.dims.x, 0., block.dims.z),
-                block.origin + block.dims - Vec3::new(0., 0., block.dims.z),
-
-                block.origin + block.dims,
-                block.origin + block.dims - Vec3::new(0., 0., block.dims.z),
-                block.origin + block.dims - Vec3::new(0., block.dims.y, block.dims.z),
-                block.origin + block.dims - Vec3::new(0., block.dims.y, 0.),
-            ];
-            for vertex in vertices {
-                positions.append(&mut vertex.to_vec().clone());
-            }
-            for face in 0..6 {
-                let mut new_indices = vec![0, 1, 2, 0, 2, 3];
-                for new_index in &mut new_indices {
-                    *new_index += index;
-                }
-                indices.append(&mut new_indices);
-                index += 4;
-            }
+            positions.append(&mut Self::get_block_vertices(&block.origin, &block.dims));
+            indices.append(&mut Self::get_block_indices(&mut index));
         }
 
         let mut floor_colors = vec![
@@ -117,13 +95,23 @@ impl Universe {
             }
         }
 
-        // GRAPPLE VIS
+        let mut player_index = 0;
         for player in &self.players {
-            if let Some(grapple) = &self.players[0].grapple {
+            // PLAYER VIS
+            if player_index != curr_player {
+                positions.append(&mut Self::get_block_vertices(&(player.position - player.dims / 2.), &player.dims));
+                indices.append(&mut Self::get_block_indices(&mut index));
+                for index in 0..color_pattern.len() {
+                    colors.push(color_pattern[(player_index * 4 + index) % color_pattern.len()]);
+                }
+            }
+            player_index += 1;
+
+            // GRAPPLE VIS
+            if let Some(grapple) = &player.grapple {
                 let grapple_width = 0.005;
                 let h_dir = Vec3::new(player.theta().cos(), 0., -player.theta().sin());
-                let y_dir = Vec3::new(player.theta().sin(), 0., player.theta().cos());
-                let start = self.players[0].position;
+                let start = player.position;
                 let end = grapple.end;
                 
                 positions.append(&mut (start + h_dir * grapple_width).to_vec());
@@ -142,9 +130,80 @@ impl Universe {
             }
         }
         
-        let cam_pos = self.players[0].position + Vec3::new(0., self.players[0].dims.y / 8., 0.);
+        let cam_pos = self.players[curr_player].position + Vec3::new(0., self.players[curr_player].dims.y / 8., 0.);
 
-        self.graphics.update(positions, colors, indices, cam_pos.to_vec(), self.players[0].theta(), -self.players[0].phi());
+        self.graphics.update(positions, colors, indices, cam_pos.to_vec(), self.players[curr_player].theta(), -self.players[curr_player].phi());
+    }
+
+    fn get_block_vertices(origin: &Vec3, dims: &Vec3) -> Vec<f32> {
+        let vertices = vec![
+            *origin,
+            *origin + Vec3::new(dims.x, 0., 0.),
+            *origin + Vec3::new(dims.x, dims.y, 0.),
+            *origin + Vec3::new(0., dims.y, 0.),
+
+            *origin,
+            *origin + Vec3::new(dims.x, 0., 0.),
+            *origin + Vec3::new(dims.x, 0., dims.z),
+            *origin + Vec3::new(0., 0., dims.z),
+
+            *origin,
+            *origin + Vec3::new(0., 0., dims.z),
+            *origin + Vec3::new(0., dims.y, dims.z),
+            *origin + Vec3::new(0., dims.y, 0.),
+
+            *origin + *dims,
+            *origin + *dims - Vec3::new(dims.x, 0., 0.),
+            *origin + *dims - Vec3::new(dims.x, dims.y, 0.),
+            *origin + *dims - Vec3::new(0., dims.y, 0.),
+
+            *origin + *dims,
+            *origin + *dims - Vec3::new(dims.x, 0., 0.),
+            *origin + *dims - Vec3::new(dims.x, 0., dims.z),
+            *origin + *dims - Vec3::new(0., 0., dims.z),
+
+            *origin + *dims,
+            *origin + *dims - Vec3::new(0., 0., dims.z),
+            *origin + *dims - Vec3::new(0., dims.y, dims.z),
+            *origin + *dims - Vec3::new(0., dims.y, 0.),
+        ];
+        let mut vertex_vec = Vec::new();
+        for vertex in &vertices {
+            vertex_vec.append(&mut vertex.to_vec());
+        }
+        vertex_vec
+    }
+
+    fn get_block_indices(index: &mut u32) -> Vec<u32> {
+        let mut indices = Vec::new();
+        let new_indices = vec![0, 1, 2, 0, 2, 3];
+        for _face in 0..6 {
+            let mut next_indices = new_indices.clone();
+            for new_index in &mut next_indices {
+                *new_index += *index;
+            }
+            indices.append(&mut next_indices);
+            *index += 4;
+        }
+        indices
+    }
+
+    pub fn player_input(&mut self, curr_player: usize, input: Input) {
+        let mut player = &mut self.players[curr_player];
+        match input {
+            Input::GoLeft => player.go(Go::Left),
+            Input::GoForward => player.go(Go::Forward),
+            Input::GoRight => player.go(Go::Right),
+            Input::GoBack => player.go(Go::Back),
+            Input::StopLeft => player.stop(Go::Left),
+            Input::StopForward => player.stop(Go::Forward),
+            Input::StopRight => player.stop(Go::Right),
+            Input::StopBack => player.stop(Go::Back),
+            Input::Jump => player.go(Go::Jump),
+            Input::Cast => player.cast_grapple(),
+            Input::Pull => player.pull_grapple(),
+            Input::Release => player.release_grapple(),
+        }
     }
 
     pub fn cast_grapple(&mut self) {
@@ -167,8 +226,8 @@ impl Universe {
         self.players[0].stop(go);
     }
 
-    pub fn mouse_look(&mut self, movement_x: f32, movement_y: f32) {
-        self.players[0].mouse_look(movement_x, movement_y);
+    pub fn mouse_look(&mut self, curr_player: usize, movement_x: f32, movement_y: f32) {
+        self.players[curr_player].mouse_look(movement_x, movement_y);
     }
 
     pub fn graphics(&self) -> Graphics {

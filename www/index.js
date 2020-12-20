@@ -12,6 +12,7 @@ const ALIVE_COLOR = "#000000";
 
 const universe = Universe.new();
 universe.update();
+let myPlayer = 0;
 
 let cameraPosition = {
   x: 0,
@@ -273,14 +274,29 @@ function main() {
 
   let then = 0;
 
+  const INPUT = {
+    "goleft": 0,
+    "goforward": 1,
+    "goright": 2,
+    "goback": 3,
+    "stopleft": 4,
+    "stopforward": 5,
+    "stopright": 6,
+    "stopback": 7,
+    "jump": 8,
+    "cast": 9,
+    "pull": 10,
+    "release": 11,
+  }
+
   document.addEventListener("mousedown", function (event) {
     if (document.pointerLockElement === document.body) {
-      //console.log("Moved by " + event.movementX + ", " + event.movementY);
       if (event.button === 0) {
-        universe.cast_grapple();
+        //universe.cast_grapple();
+        universe.player_input(myPlayer, INPUT["cast"]);
       } else if (event.button === 2) {
-        //console.log("right click");
-        universe.pull_grapple();
+        universe.player_input(myPlayer, INPUT["pull"]);
+        //universe.pull_grapple();
       }
       
     } else {
@@ -290,10 +306,9 @@ function main() {
 
   document.addEventListener("mouseup", function (event) {
     if (document.pointerLockElement === document.body) {
-      //console.log("Moved by " + event.movementX + ", " + event.movementY);
       if (event.button === 2) {
-        //console.log("right click");
-        universe.release_grapple();
+        universe.player_input(myPlayer, INPUT["release"]);
+        //universe.release_grapple();
       }
     }
   });
@@ -301,17 +316,10 @@ function main() {
   document.body.addEventListener("mousemove", function (event) {
     if (document.pointerLockElement === document.body) {
       //console.log("Moved by " + event.movementX + ", " + event.movementY);
-      universe.mouse_look(event.movementX, event.movementY);
+      universe.mouse_look(myPlayer, event.movementX, event.movementY);
     }
     
   });
-
-  const LOOK = {
-    "ArrowLeft": 0,
-    "ArrowUp": 1,
-    "ArrowRight": 2,
-    "ArrowDown": 3,
-  };
 
   const MOVE = {
     "a": 0,
@@ -332,7 +340,16 @@ function main() {
     }
 
     if (event.key in MOVE) {
-      universe.go(MOVE[event.key]);
+      //universe.go(MOVE[event.key]);
+      if (event.key !== " ") {
+        universe.player_input(myPlayer, MOVE[event.key]);
+      } else {
+        universe.player_input(myPlayer, INPUT["jump"]);
+      }
+    }
+
+    if (/[01]/.test(event.key)) {
+      myPlayer = parseInt(event.key);
     }
 
     event.preventDefault();
@@ -344,7 +361,11 @@ function main() {
     }
 
     if (event.key in MOVE) {
-      universe.stop(MOVE[event.key]);
+      //universe.stop(MOVE[event.key]);
+      if (event.key !== " ") {
+        universe.player_input(myPlayer, MOVE[event.key] + 4);
+      }
+      
     }
 
     event.preventDefault();
@@ -355,8 +376,8 @@ function main() {
     const deltaTime = now - then;
     then = now;
 
-    universe.update();
-    graphics = universe.graphics();
+    universe.update(myPlayer);
+    graphics = universe.graphics(myPlayer);
     positions = graphics.positions();
     faceColors = graphics.colors();
     indices = graphics.indices();

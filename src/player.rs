@@ -235,7 +235,6 @@ impl Player {
 
     pub fn mouse_look(&mut self, movement_x: f32, movement_y: f32) {
         let movement_y = -movement_y;
-        log(&format!("{}", movement_y)[..]);
         let del_theta = movement_x * self.look_spd;
         let del_phi = movement_y * self.look_spd;
         self.theta += del_theta;
@@ -246,7 +245,6 @@ impl Player {
                 self.phi
             }
         };
-        log(&format!("{}", self.phi)[..]);
     }
 
     pub fn position(&self) -> Vec<f32> {
