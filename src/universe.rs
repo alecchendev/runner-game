@@ -117,32 +117,6 @@ impl Universe {
             }
         }
 
-        /*
-        for player in &self.players {
-            let grapple_width = 1.;
-            let start = player.position;
-            positions.append(&mut (start + Vec3::new(grapple_width, 0., 0.)).to_vec());
-            positions.append(&mut (start - Vec3::new(grapple_width, 0., 0.)).to_vec());
-            if let Some(grapple) = &player.grapple {
-                let end = Vec3::new(0., 0., 0.); //grapple.end;
-                log(&format!("{}", grapple.end)[..]);
-                positions.append(&mut (end - Vec3::new(3., 0., 0.)).to_vec());
-                positions.append(&mut (end + Vec3::new(-3., 0., 0.)).to_vec());
-            } else {
-                positions.append(&mut (start + Vec3::new(grapple_width, 0., 0.)).to_vec());
-                positions.append(&mut (start - Vec3::new(grapple_width, 0., 0.)).to_vec());
-            }
-            
-            let mut new_indices = vec![0, 1, 2, 0, 2, 3];
-            for new_index in &mut new_indices {
-                *new_index += index;
-            }
-            indices.append(&mut new_indices);
-            index += 4;
-
-            colors.append(&mut vec![1.0, 1.0, 1.0, 1.0]);
-        }*/
-
         // GRAPPLE VIS
         for player in &self.players {
             if let Some(grapple) = &self.players[0].grapple {
@@ -157,13 +131,6 @@ impl Universe {
                 positions.append(&mut (start - h_dir * grapple_width).to_vec());
                 positions.append(&mut (end - h_dir * grapple_width).to_vec());
                 positions.append(&mut (end + h_dir * grapple_width).to_vec());
-    
-                /*
-                positions.append(&mut (start + Vec3::new(grapple_width, 0., 0.)).to_vec());
-                positions.append(&mut (start - Vec3::new(grapple_width, 0., 0.)).to_vec());
-                positions.append(&mut (end - Vec3::new(grapple_width, 0., 0.)).to_vec());
-                positions.append(&mut (end + Vec3::new(grapple_width, 0., 0.)).to_vec());
-                */
                 
                 let mut new_indices = vec![0, 1, 2, 0, 2, 3];
                 for new_index in &mut new_indices {
@@ -176,9 +143,6 @@ impl Universe {
             }
         }
         
-        
-        
-
         self.graphics.update(positions, colors, indices, self.players[0].position().to_vec(), self.players[0].theta(), self.players[0].phi());
     }
 

@@ -99,6 +99,8 @@ impl Player {
 
     pub fn update(&mut self, blocks: &Vec<Block>, gravity: f32) {
 
+        // GRAPPLE
+
         match &mut self.grapple {
             None => self.pulling = false,
             Some(grapple) => {
@@ -140,12 +142,10 @@ impl Player {
             }
         }
 
-        // MOVEMNT
+        // USER MOVEMENT
 
         let h_dir = Vec3::new(self.theta.cos(), 0., -self.theta.sin());
         let d_dir = Vec3::new(self.theta.sin(), 0., self.theta.cos());
-        //let h_vel = self.velocity.project_onto(&h_dir);
-        //let d_vel = self.velocity.project_onto(&d_dir);
 
         let move_dir = (h_dir * self.h_vel + d_dir * self.d_vel).unit();
 
@@ -164,49 +164,13 @@ impl Player {
 
         self.velocity += Vec3::new(0., gravity, 0.);
 
+        // COLLISIONS
 
-        // OLD MOVEMENT
-
-        /*
-        let mut movement = Vec3::new(0., 0., 0.);
-        if (h_vel + h_dir * self.h_vel).length() < self.move_spd {
-            movement += h_dir * self.h_vel;
-        } else if self.h_vel != 0. {
-            movement += (h_dir * self.move_spd * self.h_vel.signum()) - h_vel;
-        }
-        if (d_vel + d_dir * self.d_vel).length() < self.move_spd {
-            movement += d_dir * self.d_vel;
-        } else if self.d_vel != 0. {
-            movement += (d_dir * self.move_spd * self.d_vel.signum()) - d_vel;
-        }
-        */
-
-        // RESISTANCE AND FRICTION
-        
-        /*
-        if h_vel.length() > 0. && self.h_vel == 0. {
-            if h_vel.length() <= self.friction {
-                movement -= h_vel;
-            } else {
-                movement -= h_dir * h_vel.dot(&h_dir).signum() * self.friction;
-            }
-        }
-        if d_vel.length() > 0. && self.d_vel == 0. {
-            if d_vel.length() <= self.friction {
-                movement -= d_vel;
-            } else {
-                movement -= d_dir * d_vel.dot(&d_dir).signum() * self.friction;
-            }
-        }*/
-
-        
-        //self.velocity += movement + Vec3::new(0., gravity, 0.);
         self.on_ground = false;
 
         for block in blocks {
 
             let collision_dir = self.collision(block, &self.velocity);
-            //self.velocity = self.velocity + Vec3::new(collision_dir.x * self.velocity.x, collision_dir.y * self.velocity.y, collision_dir.z * self.velocity.z);
 
             if collision_dir.x.abs() != 0. {
                 self.velocity.x = 0.;
@@ -221,9 +185,12 @@ impl Player {
 
         }
 
+        // TERMINAL VELOCITY
         if self.velocity.length() > self.term_spd {
             self.velocity = self.velocity.unit() * self.term_spd;
         }
+
+        // MOVEMENT
         self.position = self.position + self.velocity;
     }
 
@@ -286,10 +253,5 @@ impl Player {
 
     pub fn phi(&self) -> f32 {
         self.phi
-    }
-
-    // for visualizing third person perspective
-    pub fn vel(&self) -> Vec<f32> {
-        self.velocity.to_vec()
     }
 }
