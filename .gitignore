@@ -2,3 +2,4 @@ pkg
 target
 www/node_modules
 www/.bin
+server/node_modules
