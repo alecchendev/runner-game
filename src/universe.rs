@@ -37,15 +37,35 @@ pub struct Universe {
 #[wasm_bindgen]
 impl Universe {
     pub fn new() -> Self {
-        let blocks = vec![
-            Block::new(Vec3::new(-10., -2., -9.), Vec3::new(20., 1., 20.)),
-            Block::new(Vec3::new(-1., -1., -1.), Vec3::new(2., 1.5, 2.)),
-            Block::new(Vec3::new(0., 0., 0.), Vec3::new(2., 1.5, 2.)),
-            Block::new(Vec3::new(1.75, 0.5, 4.5), Vec3::new(0.5, 2.0, 0.5)),
-            Block::new(Vec3::new(4.5, 0.0, -1.5), Vec3::new(0.5, 3.0, 3.5)),
+        let block_data = [
+            -10., -1., -10., 20., 1., 25.,
+
+            -10., 0., 10., 20., 5., 2.,
+            -4., 0., 6., 5., 1.5, 4.,
+            -3.25, 1.5, 7., 3., 1.5, 3.,
+            -2.25, 3., 8., 1.5, 1., 2.,
+
+            -10., 2., 25., 20., 1., 40.,
+            -5., 11., 18., 10., 1., 8.,
+
+            -7., 4., 35., 3., 0.3, 3.,
+            -7., 5.5, 39.5, 3., 0.3, 3.,
+            -7., 9., 47., 3., 3., 0.3,
+            -7., 13., 49.5, 3., 0.3, 3.,
+
+            -1.5, 20., 55., 3., 0.3, 3.,
+
+            4.5, 15., 60., 3., 0.3, 6.,
         ];
+        let mut blocks = vec![];
+        for i in 0..(block_data.len() / 6) {
+            let start = i * 6;
+            let origin = Vec3::new(block_data[start], block_data[start + 1], block_data[start + 2]);
+            let dims = Vec3::new(block_data[start + 3], block_data[start + 4], block_data[start + 5]);
+            blocks.push(Block::new(origin, dims));
+        }
         Self {
-            players: vec![Player::new(), Player::new()],
+            players: vec![Player::new()],//, Player::new()],
             gravity: -0.01,
             blocks,
             graphics: Graphics::new(),
