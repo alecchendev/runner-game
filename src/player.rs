@@ -54,8 +54,8 @@ impl Player {
             look_spd: 0.0008,
             move_acc: 0.04,
             friction: 0.03,
-            air_res: 0.0025,
-            move_spd: 0.085,
+            air_res: 0.0015,
+            move_spd: 0.1,
             term_spd: 0.5,
             jump_spd: 0.2,
 

@@ -369,7 +369,7 @@ function main() {
     event.preventDefault();
   });
 
-  const FPS_THROTTLE = 1000.0 / 120.0; // milliseconds / frames
+  const FPS_THROTTLE = 1000.0 / 90.0; // milliseconds / frames
   let lastDrawTime = Date.now();
 
   function render() {
