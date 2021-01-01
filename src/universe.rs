@@ -34,43 +34,40 @@ pub struct Universe {
     graphics: Graphics,
 }
 
-#[wasm_bindgen]
 impl Universe {
-    pub fn new() -> Self {
-        let block_data = [
-            -10., -1., -10., 20., 1., 25.,
+    pub fn new(block_data: Vec<f32>, win_block: Block, start_pos: Vec3) -> Self {
+        let mut count = 0;
+        let mut data = vec![];
+        let mut new_data: [f32; 6] = [0.; 6];
+        for i in &block_data {
+            new_data[count] = *i;
+            count += 1;
+            if count == 6 {
+                data.push(new_data);
+                new_data = [0.; 6];
+                count = 0;
+            }
+        }
 
-            -10., 0., 10., 20., 5., 2.,
-            -4., 0., 6., 5., 1.5, 4.,
-            -3.25, 1.5, 7., 3., 1.5, 3.,
-            -2.25, 3., 8., 1.5, 1., 2.,
-
-            -10., 2., 25., 20., 1., 40.,
-            -5., 11., 18., 10., 1., 8.,
-
-            -7., 4., 35., 3., 0.3, 3.,
-            -7., 5.5, 39.5, 3., 0.3, 3.,
-            -7., 9., 47., 3., 3., 0.3,
-            -7., 13., 49.5, 3., 0.3, 3.,
-
-            -1.5, 20., 55., 3., 0.3, 3.,
-
-            4.5, 15., 60., 3., 0.3, 6.,
-        ];
         let mut blocks = vec![];
-        for i in 0..(block_data.len() / 6) {
-            let start = i * 6;
-            let origin = Vec3::new(block_data[start], block_data[start + 1], block_data[start + 2]);
-            let dims = Vec3::new(block_data[start + 3], block_data[start + 4], block_data[start + 5]);
+        for block in &data {
+            let origin = Vec3::new(block[0], block[1], block[2]);
+            let dims = Vec3::new(block[3], block[4], block[5]);
             blocks.push(Block::new(origin, dims));
         }
+
         Self {
-            players: vec![Player::new()],//, Player::new()],
+            players: vec![Player::new(start_pos)],//, Player::new()],
             gravity: -0.01,
             blocks,
             graphics: Graphics::new(),
         }
     }
+}
+
+#[wasm_bindgen]
+impl Universe {
+    
 
     pub fn update(&mut self, curr_player: usize, elapsed_time: f32) {
         for player in &mut self.players {

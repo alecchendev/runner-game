@@ -1,7 +1,7 @@
 /*import('runner-game')
   .catch(console.error);
 //*/
-import { Universe } from "runner-game";
+import { Master, Universe, Mode } from "runner-game";
 import { memory } from "runner-game/runner_game_bg";
 const { mat4, mat3, vec3 } = glMatrix;
 
@@ -10,7 +10,8 @@ const GRID_COLOR = "#CCCCCC";
 const DEAD_COLOR = "#FFFFFF";
 const ALIVE_COLOR = "#000000";
 
-const universe = Universe.new();
+const master = Master.new();
+let universe = master.start(0);
 //universe.update(0, 0);
 let myPlayer = 0;
 
@@ -287,36 +288,55 @@ function main() {
     "release": 11,
   }
 
+  if (master.mode() === Mode.Menu) {
+
+    const levels = document.getElementsByClassName("level");
+    const startLevel = (level) => {
+      universe = master.start(level);
+      master.set_mode(Mode.Play);
+      document.getElementById("menu").style.visibility = 'hidden';
+    };
+    for (let i = 0; i < levels.length; ++i) {
+      levels[i].onclick = () => startLevel(i);
+    }
+
+  }
+
   document.addEventListener("mousedown", function (event) {
-    if (document.pointerLockElement === document.body) {
-      if (event.button === 0) {
-        //universe.cast_grapple();
-        universe.player_input(myPlayer, INPUT["cast"]);
-      } else if (event.button === 2) {
-        universe.player_input(myPlayer, INPUT["pull"]);
-        //universe.pull_grapple();
+    if (master.mode() == Mode.Play) {
+      if (document.pointerLockElement === document.body) {
+        if (event.button === 0) {
+          //universe.cast_grapple();
+          universe.player_input(myPlayer, INPUT["cast"]);
+        } else if (event.button === 2) {
+          universe.player_input(myPlayer, INPUT["pull"]);
+          //universe.pull_grapple();
+        }
+        
+      } else {
+        document.body.requestPointerLock();
       }
-      
-    } else {
-      document.body.requestPointerLock();
     }
   });
 
   document.addEventListener("mouseup", function (event) {
-    if (document.pointerLockElement === document.body) {
-      if (event.button === 2) {
-        universe.player_input(myPlayer, INPUT["release"]);
-        //universe.release_grapple();
+    if (master.mode() == Mode.Play) {
+      if (document.pointerLockElement === document.body) {
+        if (event.button === 2) {
+          universe.player_input(myPlayer, INPUT["release"]);
+          //universe.release_grapple();
+        }
       }
     }
   });
 
   document.body.addEventListener("mousemove", function (event) {
-    if (document.pointerLockElement === document.body) {
-      //console.log("Moved by " + event.movementX + ", " + event.movementY);
-      universe.mouse_look(myPlayer, event.movementX, event.movementY);
+    if (master.mode() == Mode.Play) {
+      if (document.pointerLockElement === document.body) {
+        //console.log("Moved by " + event.movementX + ", " + event.movementY);
+        universe.mouse_look(myPlayer, event.movementX, event.movementY);
+      }
     }
-    
   });
 
   const MOVE = {
@@ -328,46 +348,57 @@ function main() {
   };
 
   document.addEventListener('keydown', function(event) {
-    if (event.defaultPrevented) {
-      return; // Do nothing if the event was already processed
-    }
-
-    // this is automatic in at least chrome but just in case
-    if (event.key === "esc") {
-      document.exitPointerLock();
-    }
-
-    if (event.key in MOVE) {
-      //universe.go(MOVE[event.key]);
-      if (event.key !== " ") {
-        universe.player_input(myPlayer, MOVE[event.key]);
-      } else {
-        universe.player_input(myPlayer, INPUT["jump"]);
+    if (master.mode() == Mode.Play) {
+      if (event.defaultPrevented) {
+        return; // Do nothing if the event was already processed
       }
-    }
 
-    if (/[01]/.test(event.key)) {
-      myPlayer = parseInt(event.key);
-    }
+      // this is automatic in at least chrome but just in case
+      if (event.key === "m") {
+        document.exitPointerLock();
+        master.set_mode(Mode.Menu);
+        document.getElementById("menu").style.visibility = 'visible';
+      }
 
-    event.preventDefault();
+      if (event.key ==="r") {
+        // restart level
+      }
+
+      if (event.key in MOVE) {
+        //universe.go(MOVE[event.key]);
+        if (event.key !== " ") {
+          universe.player_input(myPlayer, MOVE[event.key]);
+        } else {
+          universe.player_input(myPlayer, INPUT["jump"]);
+        }
+      }
+
+      if (/[0]/.test(event.key)) {
+        myPlayer = parseInt(event.key);
+      }
+
+      event.preventDefault();
+    }
   });
 
   document.addEventListener('keyup', function(event) {
-    if (event.defaultPrevented) {
-      return; // Do nothing if the event was already processed
-    }
-
-    if (event.key in MOVE) {
-      //universe.stop(MOVE[event.key]);
-      if (event.key !== " ") {
-        universe.player_input(myPlayer, MOVE[event.key] + 4);
+    if (master.mode() == Mode.Play) {
+      if (event.defaultPrevented) {
+        return; // Do nothing if the event was already processed
       }
-      
-    }
 
-    event.preventDefault();
+      if (event.key in MOVE) {
+        //universe.stop(MOVE[event.key]);
+        if (event.key !== " ") {
+          universe.player_input(myPlayer, MOVE[event.key] + 4);
+        }
+        
+      }
+
+      event.preventDefault();
+    }
   });
+
 
   const FPS_THROTTLE = 1000.0 / 90.0; // milliseconds / frames
   let lastDrawTime = Date.now();
@@ -380,24 +411,26 @@ function main() {
 
     if (currTime >= lastDrawTime + FPS_THROTTLE) {
 
-      universe.update(myPlayer, elapsedTime);
-      graphics = universe.graphics(myPlayer);
-      positions = graphics.positions();
-      faceColors = graphics.colors();
-      indices = graphics.indices();
+      if (master.mode() === Mode.Play) {
+        universe.update(myPlayer, elapsedTime);
+        graphics = universe.graphics(myPlayer);
+        positions = graphics.positions();
+        faceColors = graphics.colors();
+        indices = graphics.indices();
 
-      let pos = graphics.cam_pos();//[1.0, 4.0, -9.0];//
-      let theta = graphics.cam_theta();//0.0;//
-      let phi = graphics.cam_phi();//0.5; //
-
-      cameraPosition = {
-        x: pos[0],
-        y: pos[1],
-        z: pos[2],
-      }
-      cameraAngle = {
-        theta: theta,
-        phi: phi,
+        let pos = graphics.cam_pos();//[1.0, 4.0, -9.0];//
+        let theta = graphics.cam_theta();//0.0;//
+        let phi = graphics.cam_phi();//0.5; //
+      
+        cameraPosition = {
+          x: pos[0],
+          y: pos[1],
+          z: pos[2],
+        }
+        cameraAngle = {
+          theta: theta,
+          phi: phi,
+        }
       }
 
       drawScene(gl, programInfo, buffers);

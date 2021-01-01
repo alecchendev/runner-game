@@ -14,6 +14,45 @@
         align-items: center;
         justify-content: center;
       }
+      #menu {
+        position: absolute;
+        margin: auto;
+        width: 600px;
+        height: 400px;
+        background-color: black;
+        font-family: consolas;
+      }
+      #title {
+        display: flex;
+        justify-content: center;
+        margin-top: 75px;
+        font-size: 3rem;
+        color: gray;
+      }
+      #levels {
+        margin: auto;
+        margin-top: 75px;
+        width: 480px;
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+      }
+      .level {
+        width: 100px;
+        height: 75px;
+        margin-top: 10px;
+        background-color: gray;
+
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .level:hover {
+        border-radius: 5px;
+        background-color: lightgray;
+        cursor: pointer;
+      }
     </style>
     <meta charset="utf-8">
     <title>Runner Game Demo</title>
@@ -23,5 +62,12 @@
     <script src="./gl-matrix-min.js"></script>
     <script src="./bootstrap.js"></script>
     <canvas id="runner-game-canvas"></canvas>
+    <div id="menu">
+      <div id="title">Platform Runner</div>
+      <div id="levels">
+        <div class="level" >Level 1</div>
+        <div class="level">Level 2</div>
+      </div>
+    </div>
   </body>
 </html>

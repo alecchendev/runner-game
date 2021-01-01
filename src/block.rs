@@ -1,6 +1,7 @@
 use super::utils::Vec3;
 use super::utils::AABB;
 
+#[derive(Clone)]
 pub struct Block {
     pub origin: Vec3,
     pub dims: Vec3,

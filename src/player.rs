@@ -48,7 +48,7 @@ pub enum Go {
 }
 
 impl Player {
-    pub fn new() -> Self {
+    pub fn new(position: Vec3) -> Self {
         log("Created Player!");
         Self {
             look_spd: 0.0008,
@@ -59,7 +59,7 @@ impl Player {
             term_spd: 0.5,
             jump_spd: 0.2,
 
-            position: Vec3::new(2., 1.5, -5.),
+            position,
             velocity: Vec3::new(0., 0., 0.),
             h_vel: 0.,
             d_vel: 0.,
@@ -99,10 +99,8 @@ impl Player {
     }
 
     pub fn update(&mut self, blocks: &Vec<Block>, gravity: f32, elapsed_time: f32) {
-        let FPS_THROTTLE = 1000. / 60.;
-        
-        let time_step = elapsed_time / FPS_THROTTLE;
-        //log(&format!("{}", elapsed_time)[..]);
+        let fps_throttle = 1000. / 60.;
+        let time_step = elapsed_time / fps_throttle;
 
         // FRICTION AND AIR RES
 
