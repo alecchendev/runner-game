@@ -26,8 +26,8 @@ impl Grapple {
         }
     }
 
-    pub fn cast(&mut self, blocks: &Vec<Block>) {
-        self.end = self.end + self.cast_vel;
+    pub fn cast(&mut self, blocks: &Vec<Block>, time_step: f32) {
+        self.end = self.end + self.cast_vel * time_step;
         for block in blocks {
             let min = block.min();
             let max = block.max();

@@ -98,7 +98,11 @@ impl Player {
         log("Released grapple!");
     }
 
-    pub fn update(&mut self, blocks: &Vec<Block>, gravity: f32) {
+    pub fn update(&mut self, blocks: &Vec<Block>, gravity: f32, elapsed_time: f32) {
+        let FPS_THROTTLE = 1000. / 60.;
+        
+        let time_step = elapsed_time / FPS_THROTTLE;
+        //log(&format!("{}", elapsed_time)[..]);
 
         // FRICTION AND AIR RES
 
@@ -110,14 +114,14 @@ impl Player {
                     self.velocity.x = 0.;
                     self.velocity.z = 0.;
                 } else {
-                    self.velocity -= hd_vel.unit() * self.friction;
+                    self.velocity -= hd_vel.unit() * self.friction * time_step;
                 }
             } else {
                 if hd_vel.length() <= self.air_res {
                     self.velocity.x = 0.;
                     self.velocity.z = 0.;
                 } else {
-                    self.velocity -= hd_vel.unit() * self.air_res;
+                    self.velocity -= hd_vel.unit() * self.air_res * time_step;
                 }
             }
         }
@@ -136,13 +140,12 @@ impl Player {
                 self.velocity.x = ((hd_vel + move_acc).unit() * self.move_spd).x;
                 self.velocity.z = ((hd_vel + move_acc).unit() * self.move_spd).z;
             } else {
-                self.velocity += move_acc;
+                self.velocity += move_acc * time_step; // ADFSDFSDD
             }
         }
 
         // GRAVITY
-
-        self.velocity += Vec3::new(0., gravity, 0.);
+        self.velocity += Vec3::new(0., gravity, 0.) * time_step;
 
         // GRAPPLE
 
@@ -155,13 +158,13 @@ impl Player {
                         self.velocity = self.velocity - self.velocity.project_onto(&grapple_dir); // project onto the plane of the normal
                     }
                     if self.pulling {
-                        self.velocity += grapple_dir * grapple.pull;
+                        self.velocity += grapple_dir * grapple.pull * time_step;
                     }
                 } else {
                     if (grapple.end - self.position).length() > grapple.length {
                         self.grapple = None;
                     } else {
-                        grapple.cast(blocks);
+                        grapple.cast(blocks, time_step);
                     }
                 }
             }
@@ -173,7 +176,7 @@ impl Player {
 
         for block in blocks {
 
-            let collision_dir = self.collision(block, &self.velocity);
+            let collision_dir = self.collision(block, &(self.velocity * time_step));
 
             if collision_dir.x.abs() != 0. {
                 self.velocity.x = 0.;
@@ -194,7 +197,7 @@ impl Player {
         }
 
         // MOVEMENT
-        self.position = self.position + self.velocity;
+        self.position = self.position + self.velocity * time_step;
     }
 
     pub fn go(&mut self, go: Go) {

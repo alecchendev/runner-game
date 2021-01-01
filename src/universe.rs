@@ -72,9 +72,9 @@ impl Universe {
         }
     }
 
-    pub fn update(&mut self, curr_player: usize) {
+    pub fn update(&mut self, curr_player: usize, elapsed_time: f32) {
         for player in &mut self.players {
-            player.update(&self.blocks, self.gravity);
+            player.update(&self.blocks, self.gravity, elapsed_time);
         }
         self.update_graphics(curr_player);
     }

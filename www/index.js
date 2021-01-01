@@ -11,7 +11,7 @@ const DEAD_COLOR = "#FFFFFF";
 const ALIVE_COLOR = "#000000";
 
 const universe = Universe.new();
-universe.update();
+//universe.update(0, 0);
 let myPlayer = 0;
 
 let cameraPosition = {
@@ -107,7 +107,7 @@ function initBuffers(gl) {
   };
 }
 
-function drawScene(gl, programInfo, buffers, deltaTime) {
+function drawScene(gl, programInfo, buffers) {
   /*
   gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
   
@@ -272,8 +272,6 @@ function main() {
 
   const buffers = initBuffers(gl);
 
-  let then = 0;
-
   const INPUT = {
     "goleft": 0,
     "goforward": 1,
@@ -371,34 +369,42 @@ function main() {
     event.preventDefault();
   });
 
-  function render(now) {
-    now *= 0.001;
-    const deltaTime = now - then;
-    then = now;
+  const FPS_THROTTLE = 1000.0 / 120.0; // milliseconds / frames
+  let lastDrawTime = Date.now();
 
-    universe.update(myPlayer);
-    graphics = universe.graphics(myPlayer);
-    positions = graphics.positions();
-    faceColors = graphics.colors();
-    indices = graphics.indices();
-
-    let pos = graphics.cam_pos();//[1.0, 4.0, -9.0];//
-    let theta = graphics.cam_theta();//0.0;//
-    let phi = graphics.cam_phi();//0.5; //
-
-    cameraPosition = {
-      x: pos[0],
-      y: pos[1],
-      z: pos[2],
-    }
-    cameraAngle = {
-      theta: theta,
-      phi: phi,
-    }
-
-    drawScene(gl, programInfo, buffers, deltaTime);
-
+  function render() {
     requestAnimationFrame(render);
+    const currTime = Date.now();
+    let elapsedTime = currTime - lastDrawTime;
+    //console.log(elapsedTime);
+
+    if (currTime >= lastDrawTime + FPS_THROTTLE) {
+
+      universe.update(myPlayer, elapsedTime);
+      graphics = universe.graphics(myPlayer);
+      positions = graphics.positions();
+      faceColors = graphics.colors();
+      indices = graphics.indices();
+
+      let pos = graphics.cam_pos();//[1.0, 4.0, -9.0];//
+      let theta = graphics.cam_theta();//0.0;//
+      let phi = graphics.cam_phi();//0.5; //
+
+      cameraPosition = {
+        x: pos[0],
+        y: pos[1],
+        z: pos[2],
+      }
+      cameraAngle = {
+        theta: theta,
+        phi: phi,
+      }
+
+      drawScene(gl, programInfo, buffers);
+      lastDrawTime = Date.now();
+    }
+
+       
   }
 
   requestAnimationFrame(render);
