@@ -1,5 +1,5 @@
 use wasm_bindgen::prelude::*;
-use super::utils::Vec3;
+use super::utils::{Vec3, AABB};
 use super::player::{Player, Go};
 
 use super::block::Block;
@@ -26,6 +26,10 @@ pub enum Input {
 #[wasm_bindgen]
 pub struct Universe {
     players: Vec<Player>,
+
+    start_pos: Vec3,
+
+    win_block: Block,
     
     gravity: f32, // negative
 
@@ -58,6 +62,8 @@ impl Universe {
 
         Self {
             players: vec![Player::new(start_pos)],//, Player::new()],
+            start_pos,
+            win_block,
             gravity: -0.01,
             blocks,
             graphics: Graphics::new(),
@@ -67,7 +73,13 @@ impl Universe {
 
 #[wasm_bindgen]
 impl Universe {
-    
+    pub fn won_level(&self) -> bool {
+        (self.players[0].collision(&self.win_block, &self.players[0].velocity)).length() > 0.
+    }
+
+    pub fn restart(&mut self) {
+        self.players[0] = Player::new(self.start_pos);
+    } 
 
     pub fn update(&mut self, curr_player: usize, elapsed_time: f32) {
         for player in &mut self.players {
@@ -86,6 +98,9 @@ impl Universe {
             positions.append(&mut Self::get_block_vertices(&block.origin, &block.dims));
             indices.append(&mut Self::get_block_indices(&mut index));
         }
+
+        positions.append(&mut Self::get_block_vertices(&self.win_block.origin, &self.win_block.dims));
+        indices.append(&mut Self::get_block_indices(&mut index));
 
         let mut floor_colors = vec![
             0.5,  0.5,  0.5,  1.0,

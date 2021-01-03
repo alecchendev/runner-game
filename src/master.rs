@@ -9,7 +9,8 @@ use super::log;
 #[derive(Clone, Copy)]
 pub enum Mode {
     Menu,
-    Play
+    Play,
+    WonLevel,
 }
 
 #[wasm_bindgen]
@@ -48,7 +49,7 @@ impl Master {
             levels: vec![
                 Level::new(
                     level1_block_data,
-                    Block::new(Vec3::new(0., 0., 0.), Vec3::new(0., 0., 0.)),
+                    Block::new(Vec3::new(4.5, 15.3, 64.), Vec3::new(3., 3., 2.)),
                     Vec3::new(2., 1.5, -5.),
                 ),
                 Level::new(

@@ -10,8 +10,10 @@ const GRID_COLOR = "#CCCCCC";
 const DEAD_COLOR = "#FFFFFF";
 const ALIVE_COLOR = "#000000";
 
+let startTime = Date.now();
+
 const master = Master.new();
-let universe = master.start(0);
+let universe = null;//master.start(0);
 //universe.update(0, 0);
 let myPlayer = 0;
 
@@ -25,10 +27,10 @@ let cameraAngle = {
   phi: 0,
 }
 
-let graphics = universe.graphics();
-let positions = graphics.positions();
-let faceColors = graphics.colors();
-let indices = graphics.indices();
+let graphics = null;//universe.graphics();
+let positions = [];//graphics.positions();
+let faceColors = [];//graphics.colors();
+let indices = [];//graphics.indices();
 
 function initShaderProgram(gl, vsSource, fsSource) {
   const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
@@ -288,19 +290,21 @@ function main() {
     "release": 11,
   }
 
-  if (master.mode() === Mode.Menu) {
-
-    const levels = document.getElementsByClassName("level");
-    const startLevel = (level) => {
-      universe = master.start(level);
-      master.set_mode(Mode.Play);
-      document.getElementById("menu").style.visibility = 'hidden';
-    };
-    for (let i = 0; i < levels.length; ++i) {
-      levels[i].onclick = () => startLevel(i);
-    }
-
+  
+  const levels = document.getElementsByClassName("level");
+  const startLevel = (level) => {
+    universe = master.start(level);
+    master.set_mode(Mode.Play);
+    document.getElementById("menu").style.visibility = 'hidden';
+    startTime = Date.now();
+  };
+  for (let i = 0; i < levels.length; ++i) {
+    levels[i].onclick = () => startLevel(i);
   }
+
+  document.getElementById("endMenu").style.visibility = 'hidden';
+  document.getElementById("restart").onclick = () => restart();
+  document.getElementById("goMenu").onclick = () => goMenu();
 
   document.addEventListener("mousedown", function (event) {
     if (master.mode() == Mode.Play) {
@@ -347,6 +351,25 @@ function main() {
     " ": 4,
   };
 
+  const goMenu = () => {
+    document.exitPointerLock();
+    master.set_mode(Mode.Menu);
+    universe = null;
+    document.getElementById("menu").style.visibility = 'visible';
+    document.getElementById("endMenu").style.visibility = 'hidden';
+    positions = [];
+    faceColors = [];
+    indices = [];
+  }
+
+  const restart = () => {
+    universe.restart();
+    master.set_mode(Mode.Play);
+    document.getElementById("menu").style.visibility = 'hidden';
+    document.getElementById("endMenu").style.visibility = 'hidden';
+    startTime = Date.now();
+  }
+
   document.addEventListener('keydown', function(event) {
     if (master.mode() == Mode.Play) {
       if (event.defaultPrevented) {
@@ -355,13 +378,12 @@ function main() {
 
       // this is automatic in at least chrome but just in case
       if (event.key === "m") {
-        document.exitPointerLock();
-        master.set_mode(Mode.Menu);
-        document.getElementById("menu").style.visibility = 'visible';
+        goMenu();
       }
 
       if (event.key ==="r") {
         // restart level
+        restart();
       }
 
       if (event.key in MOVE) {
@@ -403,11 +425,24 @@ function main() {
   const FPS_THROTTLE = 1000.0 / 90.0; // milliseconds / frames
   let lastDrawTime = Date.now();
 
+  const goEndMenu = () => {
+    document.exitPointerLock();
+    const endTime = Date.now();
+    const levelTime = (endTime - startTime) / 1000;
+    document.getElementById("time").innerHTML = "Finished in " + levelTime + " seconds.";
+    document.getElementById("endMenu").style.visibility = 'visible';
+    master.set_mode(Mode.WonLevel);
+  }
+
   function render() {
     requestAnimationFrame(render);
     const currTime = Date.now();
     let elapsedTime = currTime - lastDrawTime;
     //console.log(elapsedTime);
+
+    if (universe && universe.won_level() && master.mode() !== Mode.WonLevel) {
+      goEndMenu();
+    }
 
     if (currTime >= lastDrawTime + FPS_THROTTLE) {
 

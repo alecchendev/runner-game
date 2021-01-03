@@ -15,7 +15,7 @@ pub struct Player {
     jump_spd: f32,
 
 	pub position: Vec3,
-	velocity: Vec3,
+	pub velocity: Vec3,
 	h_vel: f32,
     d_vel: f32,
     theta: f32,

@@ -22,14 +22,15 @@
         background-color: black;
         font-family: consolas;
       }
-      #title {
+      .title {
         display: flex;
         justify-content: center;
         margin-top: 75px;
         font-size: 3rem;
         color: gray;
+        text-align: center;
       }
-      #levels {
+      .options {
         margin: auto;
         margin-top: 75px;
         width: 480px;
@@ -37,7 +38,7 @@
         justify-content: space-around;
         flex-wrap: wrap;
       }
-      .level {
+      .option {
         width: 100px;
         height: 75px;
         margin-top: 10px;
@@ -48,10 +49,18 @@
         flex-direction: column;
         justify-content: center;
       }
-      .level:hover {
+      .option:hover {
         border-radius: 5px;
         background-color: lightgray;
         cursor: pointer;
+      }
+      #endMenu {
+        position: absolute;
+        margin: auto;
+        width: 600px;
+        height: 400px;
+        background-color: black;
+        font-family: consolas;
       }
     </style>
     <meta charset="utf-8">
@@ -63,10 +72,17 @@
     <script src="./bootstrap.js"></script>
     <canvas id="runner-game-canvas"></canvas>
     <div id="menu">
-      <div id="title">Platform Runner</div>
-      <div id="levels">
-        <div class="level" >Level 1</div>
-        <div class="level">Level 2</div>
+      <div class="title">Platform Runner</div>
+      <div class="options">
+        <div class="option level" >Level 1</div>
+        <div class="option level">Level 2</div>
+      </div>
+    </div>
+    <div id="endMenu">
+      <div id="time" class="title">Nice job!</div>
+      <div class="options">
+        <div id="restart" class="option">Restart</div>
+        <div id="goMenu" class="option">Menu</div>
       </div>
     </div>
   </body>
