@@ -14,6 +14,14 @@
         align-items: center;
         justify-content: center;
       }
+      #reticle {
+        position: absolute;
+        margin: auto;
+        width: 10px;
+        height: 10px;
+        border-radius: 5px;
+        background-color: black;
+      }
       #menu {
         position: absolute;
         margin: auto;
@@ -71,6 +79,7 @@
     <script src="./gl-matrix-min.js"></script>
     <script src="./bootstrap.js"></script>
     <canvas id="runner-game-canvas"></canvas>
+    <div id="reticle"></div>
     <div id="menu">
       <div class="title">Platform Runner</div>
       <div class="options">

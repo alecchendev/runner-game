@@ -162,7 +162,7 @@ impl Universe {
             }
         }
         
-        let cam_pos = self.players[curr_player].position + Vec3::new(0., self.players[curr_player].dims.y / 8., 0.);
+        let cam_pos = self.players[curr_player].position + Vec3::new(0., self.players[curr_player].dims.y / 25., 0.);
 
         self.graphics.update(positions, colors, indices, cam_pos.to_vec(), self.players[curr_player].theta(), -self.players[curr_player].phi());
     }
