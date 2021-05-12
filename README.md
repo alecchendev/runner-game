@@ -1,6 +1,6 @@
 # 3D Platform Runner
 
-![demo](demo.gif)
+![demo](runnerGame.gif)
 
 ### Description
 A first-person 3D platformer where you race others to traverse a course using a spiderman-grappling-hook-esque ability.
